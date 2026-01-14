@@ -1,0 +1,59 @@
+{
+  "name": "imobi-pro",
+  "version": "1.0.0",
+  "description": "Sistema completo de gestão imobiliária com CRM integrado",
+  "author": "Cláudio",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "install:all": "npm run install:backend && npm run install:frontend",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run serve",
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "migrate": "cd backend && npm run migrate",
+    "migrate:undo": "cd backend && npm run migrate:undo",
+    "seed": "cd backend && npm run seed",
+    "test:backend": "cd backend && npm run test",
+    "test:frontend": "cd frontend && npm run test:unit",
+    "test": "npm run test:backend && npm run test:frontend",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "clean:backend": "cd backend && rm -rf node_modules dist",
+    "clean:frontend": "cd frontend && rm -rf node_modules dist",
+    "clean": "npm run clean:backend && npm run clean:frontend",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:rebuild": "docker-compose up -d --build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seu-usuario/imobi-pro.git"
+  },
+  "keywords": [
+    "imobiliaria",
+    "crm",
+    "gestao",
+    "nodejs",
+    "typescript",
+    "vue",
+    "quasar",
+    "postgresql"
+  ]
+}

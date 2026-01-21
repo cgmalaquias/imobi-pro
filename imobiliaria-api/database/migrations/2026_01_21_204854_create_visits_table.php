@@ -17,7 +17,8 @@ return new class extends Migration
             $table->date('date');
             $table->string('time');
             $table->text('message')->nullable();
-            $table->enum('status', ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'])->default('PENDING');
+            // Status em português
+            $table->string('status')->default('PENDENTE'); // PENDENTE, CONFIRMADO, CONCLUIDO, CANCELADO
             $table->timestamps();
         });
     }

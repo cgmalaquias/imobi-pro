@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignUuid('property_id')->constrained()->onDelete('cascade');
             $table->string('url');
             $table->integer('order')->default(0);
+            $table->timestamp('created_at')->useCurrent();
         });
     }
 

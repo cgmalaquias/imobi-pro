@@ -12,8 +12,9 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('title');
             $table->text('description');
-            $table->enum('type', ['HOUSE', 'APARTMENT', 'COMMERCIAL', 'LAND', 'FARM']);
-            $table->enum('status', ['AVAILABLE', 'SOLD', 'RENTED'])->default('AVAILABLE');
+            // Tipos em português
+            $table->string('type')->default('CASA'); // CASA, APARTAMENTO, COMERCIAL, TERRENO, CHACARA
+            $table->string('status')->default('DISPONIVEL'); // DISPONIVEL, VENDIDO, ALUGADO
             $table->decimal('price', 12, 2);
             $table->decimal('area', 10, 2)->nullable();
             $table->integer('bedrooms')->nullable();

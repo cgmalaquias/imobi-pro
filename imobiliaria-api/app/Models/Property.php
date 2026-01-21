@@ -11,6 +11,17 @@ class Property extends Model
 {
     use HasFactory, HasUuids;
 
+    // Constantes para tipos em português
+    const TYPE_CASA = 'CASA';
+    const TYPE_APARTAMENTO = 'APARTAMENTO';
+    const TYPE_COMERCIAL = 'COMERCIAL';
+    const TYPE_TERRENO = 'TERRENO';
+    const TYPE_CHACARA = 'CHACARA';
+
+    const STATUS_DISPONIVEL = 'DISPONIVEL';
+    const STATUS_VENDIDO = 'VENDIDO';
+    const STATUS_ALUGADO = 'ALUGADO';
+
     protected $fillable = [
         'title',
         'description',
@@ -52,5 +63,26 @@ class Property extends Model
     public function visits(): HasMany
     {
         return $this->hasMany(Visit::class);
+    }
+
+    // Helper methods
+    public static function getTypes(): array
+    {
+        return [
+            self::TYPE_CASA,
+            self::TYPE_APARTAMENTO,
+            self::TYPE_COMERCIAL,
+            self::TYPE_TERRENO,
+            self::TYPE_CHACARA,
+        ];
+    }
+
+    public static function getStatuses(): array
+    {
+        return [
+            self::STATUS_DISPONIVEL,
+            self::STATUS_VENDIDO,
+            self::STATUS_ALUGADO,
+        ];
     }
 }

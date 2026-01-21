@@ -1,25 +1,32 @@
-# Build stage
-FROM node:18-alpine AS builder
+# Etapa 1: Build
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Copiar dependências
 COPY package*.json ./
 
+# Instalar dependências
 RUN npm ci
 
+# Copiar código fonte
 COPY . .
 
+# Build do Quasar
 RUN npm run build
 
-# Production stage
-FROM node:18-alpine
+# Etapa 2: Nginx
+FROM nginx:alpine
 
-WORKDIR /app
+# Remover config padrão
+RUN rm /etc/nginx/conf.d/default.conf
 
-RUN npm install -g serve
+# Copiar build
+COPY --from=builder /app/dist/spa /usr/share/nginx/html
 
-COPY --from=builder /app/dist ./dist
+# Copiar configuração do Nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 8080
+EXPOSE 80
 
-CMD ["serve", "-s", "dist", "-l", "8080"]
+CMD ["nginx", "-g", "daemon off;"]

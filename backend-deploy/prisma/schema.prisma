@@ -1,0 +1,195 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// MODELS
+// ============================================
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  phone     String?
+  role      UserRole @default(CORRETOR)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  properties   Property[]
+  leads        Lead[]
+  leadHistory  LeadHistory[]
+
+  @@map("users")
+}
+
+model Property {
+  id               String          @id @default(uuid())
+  title            String
+  description      String?         @db.Text
+  type             PropertyType
+  transactionType  TransactionType @default(VENDA) @map("transaction_type")
+  status           PropertyStatus  @default(DISPONIVEL)
+  priceSale        Decimal?        @map("price_sale") @db.Decimal(10, 2)
+  priceRent        Decimal?        @map("price_rent") @db.Decimal(10, 2)
+  address          String
+  neighborhood     String
+  city             String
+  state            String          @db.VarChar(2)
+  zipCode          String?         @map("zip_code") @db.VarChar(10)
+  areaTotal        Decimal?        @map("area_total") @db.Decimal(10, 2)
+  areaBuilt        Decimal?        @map("area_built") @db.Decimal(10, 2)
+  bedrooms         Int?
+  bathrooms        Int?
+  garage           Int?
+  featured         Boolean         @default(false)
+  userId           String          @map("user_id")
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  images PropertyImage[]
+  leads  Lead[]
+
+  @@map("properties")
+}
+
+model PropertyImage {
+  id         String   @id @default(uuid())
+  propertyId String   @map("property_id")
+  url        String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("property_images")
+}
+
+model Client {
+  id           String       @id @default(uuid())
+  name         String
+  email        String?
+  phone        String
+  cpf          String?      @db.VarChar(14)
+  dateBirth    DateTime?    @map("date_birth") @db.Date
+  address      String?
+  neighborhood String?
+  city         String?
+  state        String?      @db.VarChar(2)
+  zipCode      String?      @map("zip_code") @db.VarChar(10)
+  source       ClientSource @default(SITE)
+  notes        String?      @db.Text
+  active       Boolean      @default(true)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  leads Lead[]
+
+  @@map("clients")
+}
+
+model Lead {
+  id             String     @id @default(uuid())
+  clientId       String     @map("client_id")
+  propertyId     String     @map("property_id")
+  userId         String     @map("user_id")
+  status         LeadStatus @default(NOVO)
+  stage          LeadStage  @default(PROSPECCAO)
+  probability    Int        @default(0)
+  estimatedValue Decimal?   @map("estimated_value") @db.Decimal(10, 2)
+  nextAction     String?    @map("next_action")
+  nextActionDate DateTime?  @map("next_action_date")
+  notes          String?    @db.Text
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  client   Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  property Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  history  LeadHistory[]
+
+  @@map("leads")
+}
+
+model LeadHistory {
+  id          String   @id @default(uuid())
+  leadId      String   @map("lead_id")
+  userId      String   @map("user_id")
+  action      String
+  oldValue    String?  @map("old_value")
+  newValue    String?  @map("new_value")
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("lead_history")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  ADMIN
+  CORRETOR
+  GERENTE
+}
+
+enum PropertyType {
+  CASA
+  APARTAMENTO
+  TERRENO
+  COMERCIAL
+  RURAL
+}
+
+enum PropertyStatus {
+  DISPONIVEL
+  RESERVADO
+  VENDIDO
+  ALUGADO
+  INATIVO
+}
+
+enum TransactionType {
+  VENDA
+  ALUGUEL
+  AMBOS
+}
+
+enum LeadStatus {
+  NOVO
+  CONTATADO
+  VISITOU
+  INTERESSADO
+  NEGOCIANDO
+  CONCLUIDO
+  PERDIDO
+}
+
+enum LeadStage {
+  PROSPECCAO
+  QUALIFICACAO
+  APRESENTACAO
+  NEGOCIACAO
+  FECHAMENTO
+}
+
+enum ClientSource {
+  SITE
+  INDICACAO
+  ANUNCIO
+  OUTRO
+}

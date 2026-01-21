@@ -209,29 +209,30 @@
 	import { useRouter, useRoute } from "vue-router";
 	import { useQuasar } from "quasar";
 	import { useAuthStore } from "src/stores/auth";
-	import { useLeadStore } from "src/stores/lead";
+	import { useLeadStore } from "src/stores/lead"; // Certifique-se de que este store existe e está correto
 
 	const $q = useQuasar();
 	const router = useRouter();
 	const route = useRoute();
 	const authStore = useAuthStore();
-	const leadStore = useLeadStore();
+	const leadStore = useLeadStore(); // Assumindo que useLeadStore está implementado
 
 	// Estado do menu lateral
-	const leftDrawerOpen = ref(false);
+	const leftDrawerOpen = ref<boolean>(false);
 
 	// Dados do app
-	const appName = import.meta.env.VITE_APP_NAME || "Imobiliária Pro";
-	const appVersion = import.meta.env.VITE_APP_VERSION || "1.0.0";
+	const appName: string = import.meta.env.VITE_APP_NAME || "Imobiliária Pro";
+	const appVersion: string = import.meta.env.VITE_APP_VERSION || "1.0.0";
 
 	// Dados do usuário
-	const userName = computed(() => authStore.userName);
-	const userEmail = computed(() => authStore.userEmail);
-	const isAdmin = computed(() => authStore.isAdmin);
+	const userName = computed<string>(() => authStore.userName);
+	const userEmail = computed<string>(() => authStore.userEmail);
+	const isAdmin = computed<boolean>(() => authStore.isAdmin);
 
 	// Contadores
-	const newLeadsCount = computed(() => {
-		return leadStore.leads.filter((lead) => lead.status === "NOVO").length;
+	const newLeadsCount = computed<number>(() => {
+		// Verifique se leadStore.leads está disponível e é um array
+		return leadStore.leads?.filter((lead) => lead.status === "NOVO").length || 0;
 	});
 
 	// Funções
@@ -265,9 +266,10 @@
 				color: "negative",
 			},
 			persistent: true,
-		}).onOk(() => {
-			authStore.logout();
-			router.push({ name: "login" });
+		}).onOk(async () => {
+			// Adicionado async aqui
+			await authStore.logout(); // Aguardar o logout
+			// O router.push já está dentro do authStore.logout, então pode ser removido daqui
 			$q.notify({
 				type: "positive",
 				message: "Logout realizado com sucesso",
@@ -278,10 +280,17 @@
 
 	// Carregar dados iniciais
 	onMounted(async () => {
+		// Tenta buscar os dados do usuário logado
+		await authStore.getMe();
 		try {
-			await leadStore.fetchLeads({ limit: 100 });
-		} catch (error) {
-			console.error("Erro ao carregar dados:", error);
+			// Apenas tenta buscar leads se o usuário estiver autenticado
+			if (authStore.token) {
+				await leadStore.fetchLeads({ limit: 100 });
+			}
+		} catch (error: unknown) {
+			// Usar unknown para erro de catch
+			console.error("Erro ao carregar dados de leads:", error);
+			// Não precisa de notify aqui, pois o interceptor do axios ou o próprio store já deve lidar com erros de auth
 		}
 	});
 </script>

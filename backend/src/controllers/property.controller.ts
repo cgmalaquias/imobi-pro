@@ -1,5 +1,21 @@
 import { Request, Response } from 'express';
 import prisma from '../config/prisma';
+import { Decimal } from '@prisma/client/runtime/library'; // Importar Decimal
+import { PropertyType, PropertyStatus, TransactionType } from '@prisma/client'; // Importar enums do Prisma
+import path from 'path';
+import fs from 'fs';
+
+// Helper para lidar com upload de arquivos (se houver)
+const handleFileUpload = (req: Request): { url: string; order?: number }[] => {
+  const files = req.files as Express.Multer.File[];
+  if (!files || files.length === 0) {
+    return [];
+  }
+  return files.map((file, index) => ({
+    url: `/uploads/${file.filename}`,
+    order: index
+  }));
+};
 
 // Listar imóveis
 export const getProperties = async (req: Request, res: Response): Promise<void> => {
@@ -68,8 +84,8 @@ export const getProperties = async (req: Request, res: Response): Promise<void> 
       page: Number(page),
       totalPages: Math.ceil(total / Number(limit))
     });
-  } catch (error) {
-    console.error('Erro ao buscar imóveis:', error);
+  } catch (error: unknown) { // Usar unknown para erro de catch
+    console.error('❌ Erro ao buscar imóveis:', error);
     res.status(500).json({ message: 'Erro ao buscar imóveis' });
   }
 };
@@ -109,8 +125,8 @@ export const getPropertyById = async (req: Request, res: Response): Promise<void
     };
 
     res.json(propertyWithFullUrls);
-  } catch (error) {
-    console.error('Erro ao buscar imóvel:', error);
+  } catch (error: unknown) {
+    console.error('❌ Erro ao buscar imóvel:', error);
     res.status(500).json({ message: 'Erro ao buscar imóvel' });
   }
 };
@@ -125,10 +141,44 @@ export const createProperty = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    // Processar novas imagens (se houver upload)
+    const newImageUrls = handleFileUpload(req);
+
+    // Preparar dados para o Prisma, convertendo tipos e garantindo consistência
+    const {
+      title, description, address, neighborhood, city, state, zipCode,
+      priceSale, priceRent, type, status, transactionType, bedrooms, bathrooms,
+      garage, areaTotal, areaBuilt, featured
+    } = req.body;
+
+    const dataToCreate: any = { // Usar any para flexibilidade na construção do objeto
+      title,
+      description,
+      address,
+      neighborhood,
+      city,
+      state,
+      zipCode,
+      type: type as PropertyType,
+      status: status as PropertyStatus,
+      transactionType: transactionType ? (transactionType as TransactionType) : undefined,
+      bedrooms: bedrooms ? parseInt(bedrooms) : undefined,
+      bathrooms: bathrooms ? parseInt(bathrooms) : undefined,
+      garage: garage ? parseInt(garage) : undefined,
+      areaTotal: areaTotal ? new Decimal(parseFloat(areaTotal)) : undefined,
+      areaBuilt: areaBuilt ? new Decimal(parseFloat(areaBuilt)) : undefined,
+      priceSale: priceSale ? new Decimal(parseFloat(priceSale)) : undefined,
+      priceRent: priceRent ? new Decimal(parseFloat(priceRent)) : undefined,
+      featured: featured === 'true', // Converter string 'true'/'false' para boolean
+      userId
+    };
+
     const property = await prisma.property.create({
       data: {
-        ...req.body,
-        userId
+        ...dataToCreate,
+        images: {
+          create: newImageUrls.map(img => ({ url: img.url, order: img.order || 0 }))
+        }
       },
       include: {
         images: true,
@@ -143,8 +193,8 @@ export const createProperty = async (req: Request, res: Response): Promise<void>
     });
 
     res.status(201).json(property);
-  } catch (error) {
-    console.error('Erro ao criar imóvel:', error);
+  } catch (error: unknown) {
+    console.error('❌ Erro ao criar imóvel:', error);
     res.status(500).json({ message: 'Erro ao criar imóvel' });
   }
 };
@@ -153,10 +203,50 @@ export const createProperty = async (req: Request, res: Response): Promise<void>
 export const updateProperty = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({ message: 'Usuário não autenticado.' });
+      return;
+    }
+
+    const {
+      title, description, address, neighborhood, city, state, zipCode,
+      priceSale, priceRent, type, status, transactionType, bedrooms, bathrooms,
+      garage, areaTotal, areaBuilt, featured
+    } = req.body;
+
+    const dataToUpdate: any = {}; // Usar any para flexibilidade na construção do objeto
+
+    if (title !== undefined) dataToUpdate.title = title;
+    if (description !== undefined) dataToUpdate.description = description;
+    if (address !== undefined) dataToUpdate.address = address;
+    if (neighborhood !== undefined) dataToUpdate.neighborhood = neighborhood;
+    if (city !== undefined) dataToUpdate.city = city;
+    if (state !== undefined) dataToUpdate.state = state;
+    if (zipCode !== undefined) dataToUpdate.zipCode = zipCode;
+
+    // Conversão de ENUMS
+    if (type !== undefined) dataToUpdate.type = type as PropertyType;
+    if (status !== undefined) dataToUpdate.status = status as PropertyStatus;
+    if (transactionType !== undefined) dataToUpdate.transactionType = transactionType as TransactionType;
+
+    // Conversão de NÚMEROS (Int e Decimal)
+    // Verificar se o valor não é undefined, null ou string vazia antes de converter
+    if (bedrooms !== undefined && bedrooms !== null && bedrooms !== '') dataToUpdate.bedrooms = parseInt(bedrooms);
+    if (bathrooms !== undefined && bathrooms !== null && bathrooms !== '') dataToUpdate.bathrooms = parseInt(bathrooms);
+    if (garage !== undefined && garage !== null && garage !== '') dataToUpdate.garage = parseInt(garage);
+    if (areaTotal !== undefined && areaTotal !== null && areaTotal !== '') dataToUpdate.areaTotal = new Decimal(parseFloat(areaTotal));
+    if (areaBuilt !== undefined && areaBuilt !== null && areaBuilt !== '') dataToUpdate.areaBuilt = new Decimal(parseFloat(areaBuilt));
+    if (priceSale !== undefined && priceSale !== null && priceSale !== '') dataToUpdate.priceSale = new Decimal(parseFloat(priceSale));
+    if (priceRent !== undefined && priceRent !== null && priceRent !== '') dataToUpdate.priceRent = new Decimal(parseFloat(priceRent));
+
+    // Conversão de BOOLEAN
+    if (featured !== undefined) dataToUpdate.featured = featured === true || featured === 'true';
 
     const property = await prisma.property.update({
       where: { id },
-      data: req.body,
+      data: dataToUpdate,
       include: {
         images: {
           orderBy: { order: 'asc' }
@@ -180,8 +270,8 @@ export const updateProperty = async (req: Request, res: Response): Promise<void>
     };
 
     res.json(propertyWithFullUrls);
-  } catch (error) {
-    console.error('Erro ao atualizar imóvel:', error);
+  } catch (error: unknown) {
+    console.error('❌ Erro ao atualizar imóvel:', error);
     res.status(500).json({ message: 'Erro ao atualizar imóvel' });
   }
 };
@@ -196,8 +286,8 @@ export const deleteProperty = async (req: Request, res: Response): Promise<void>
     });
 
     res.json({ message: 'Imóvel excluído com sucesso' });
-  } catch (error) {
-    console.error('Erro ao excluir imóvel:', error);
+  } catch (error: unknown) {
+    console.error('❌ Erro ao excluir imóvel:', error);
     res.status(500).json({ message: 'Erro ao excluir imóvel' });
   }
 };
@@ -227,8 +317,67 @@ export const toggleFeatured = async (req: Request, res: Response): Promise<void>
     });
 
     res.json(updatedProperty);
-  } catch (error) {
-    console.error('Erro ao atualizar destaque:', error);
+  } catch (error: unknown) {
+    console.error('❌ Erro ao atualizar destaque:', error);
     res.status(500).json({ message: 'Erro ao atualizar destaque' });
+  }
+};
+
+// Adicionei estas funções para as rotas de imagem que você tem no property.routes.ts
+export const uploadImages = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { propertyId } = req.params;
+    const imageUrls = handleFileUpload(req);
+
+    // Se o propertyId for válido, associar as imagens ao imóvel
+    if (propertyId) {
+      const createdImages = await prisma.propertyImage.createMany({
+        data: imageUrls.map(img => ({
+          propertyId: propertyId,
+          url: img.url,
+          order: img.order || 0
+        }))
+      });
+
+      // Buscar as imagens criadas para retornar com IDs e outros dados
+      const imagesWithDetails = await prisma.propertyImage.findMany({
+        where: {
+          propertyId: propertyId,
+          url: {
+            in: imageUrls.map(img => img.url)
+          }
+        }
+      });
+
+      res.status(200).json({ message: 'Imagens enviadas e associadas com sucesso!', images: imagesWithDetails });
+    } else {
+      res.status(400).json({ message: 'ID do imóvel não fornecido.' });
+    }
+  } catch (error: unknown) {
+    console.error('❌ Erro ao fazer upload de imagens:', error);
+    res.status(500).json({ message: 'Erro interno do servidor ao fazer upload de imagens.' });
+  }
+};
+
+export const deleteImage = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { imageId } = req.params;
+    const image = await prisma.propertyImage.findUnique({ where: { id: imageId } });
+
+    if (!image) {
+      res.status(404).json({ message: 'Imagem não encontrada.' });
+      return;
+    }
+
+    const imagePath = path.join(__dirname, '../../uploads', path.basename(image.url));
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
+    await prisma.propertyImage.delete({ where: { id: imageId } });
+
+    res.status(200).json({ message: 'Imagem excluída com sucesso.' });
+  } catch (error: unknown) {
+    console.error('❌ Erro ao deletar imagem:', error);
+    res.status(500).json({ message: 'Erro interno do servidor ao deletar imagem.' });
   }
 };

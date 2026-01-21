@@ -1,1 +1,15 @@
-// app global css in SCSS form
+/* Estilos personalizados para a fonte da logo */
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap');
+
+/* marrom/bege claro da logo */
+:root {
+  --brand-color: #c8a882;
+}
+
+a, .btn {
+  color: var(--brand-color) !important;
+}
+
+a:hover {
+  background-color: rgba(200, 168, 130, 0.12); /* leve highlight */
+}// app global css in SCSS form

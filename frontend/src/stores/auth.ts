@@ -2,9 +2,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { Notify } from 'quasar'; // Usaremos Quasar Notify para mensagens
+import { Notify } from 'quasar';
 
-// Definindo os tipos para as respostas da API
 interface User {
   id: string;
   name: string;
@@ -22,39 +21,40 @@ interface AuthResponse {
   token: string;
 }
 
+interface ErrorResponse {
+  message: string;
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter();
   const token = ref<string | null>(localStorage.getItem('token'));
   const user = ref<User | null>(JSON.parse(localStorage.getItem('user') || 'null'));
-  const loading = ref(false);
+  const loading = ref<boolean>(false);
 
-  const API_BASE_URL = process.env.API_URL || 'http://localhost:3000/api';
+  const API_BASE_URL: string = process.env.API_URL || 'http://localhost:3000/api';
 
-  const setAuthData = (newToken: string, newUser: User) => {
+  const setAuthData = (newToken: string, newUser: User): void => {
     token.value = newToken;
     user.value = newUser;
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(newUser));
   };
 
-  const clearAuthData = () => {
+  const clearAuthData = (): void => {
     token.value = null;
     user.value = null;
     localStorage.removeItem('token');
     localStorage.removeItem('user');
   };
 
-  // --- NOVOS COMPUTED PROPERTIES ---
-  const userName = computed(() => user.value?.name || 'Convidado');
-  const userEmail = computed(() => user.value?.email || 'N/A');
-  const isAdmin = computed(() => user.value?.role === 'ADMIN'); // <-- ADICIONADO AQUI
-  // --- FIM DOS NOVOS COMPUTED PROPERTIES --
+  const userName = computed<string>(() => user.value?.name || 'Convidado');
+  const userEmail = computed<string>(() => user.value?.email || 'N/A');
+  const isAdmin = computed<boolean>(() => user.value?.role === 'ADMIN');
 
   const login = async (email: string, password: string): Promise<boolean> => {
     loading.value = true;
     try {
-      console.log('🔍 Fazendo login com Fetch API...'); // Log para depuração
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response: Response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,7 +62,7 @@ export const useAuthStore = defineStore('auth', () => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data: AuthResponse | { message: string } = await response.json();
+      const data: AuthResponse | ErrorResponse = await response.json();
 
       if (response.ok) {
         const authData = data as AuthResponse;
@@ -74,7 +74,7 @@ export const useAuthStore = defineStore('auth', () => {
         });
         return true;
       } else {
-        const errorData = data as { message: string };
+        const errorData = data as ErrorResponse;
         Notify.create({
           type: 'negative',
           message: errorData.message || 'Erro ao fazer login.',
@@ -82,11 +82,11 @@ export const useAuthStore = defineStore('auth', () => {
         });
         return false;
       }
-    } catch (error: any) {
+    } catch (error: unknown) { // Usar unknown para erro de catch
       console.error('❌ Erro no login:', error);
       Notify.create({
         type: 'negative',
-        message: error.message || 'Erro de rede ou na requisição.',
+        message: (error as Error).message || 'Erro de rede ou na requisição.',
         position: 'top-right',
       });
       return false;
@@ -98,7 +98,7 @@ export const useAuthStore = defineStore('auth', () => {
   const register = async (name: string, email: string, password: string, phone?: string): Promise<boolean> => {
     loading.value = true;
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const response: Response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -106,7 +106,7 @@ export const useAuthStore = defineStore('auth', () => {
         body: JSON.stringify({ name, email, password, phone }),
       });
 
-      const data: AuthResponse | { message: string } = await response.json();
+      const data: AuthResponse | ErrorResponse = await response.json();
 
       if (response.ok) {
         const authData = data as AuthResponse;
@@ -118,7 +118,7 @@ export const useAuthStore = defineStore('auth', () => {
         });
         return true;
       } else {
-        const errorData = data as { message: string };
+        const errorData = data as ErrorResponse;
         Notify.create({
           type: 'negative',
           message: errorData.message || 'Erro ao registrar.',
@@ -126,11 +126,11 @@ export const useAuthStore = defineStore('auth', () => {
         });
         return false;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Erro no registro:', error);
       Notify.create({
         type: 'negative',
-        message: error.message || 'Erro de rede ou na requisição.',
+        message: (error as Error).message || 'Erro de rede ou na requisição.',
         position: 'top-right',
       });
       return false;
@@ -143,10 +143,11 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true;
     try {
       if (!token.value) {
+        loading.value = false; // Garantir que loading seja false se não houver token
         return null;
       }
 
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response: Response = await fetch(`${API_BASE_URL}/auth/me`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -154,7 +155,7 @@ export const useAuthStore = defineStore('auth', () => {
         },
       });
 
-      const data: { user: User } | { message: string } = await response.json();
+      const data: { user: User } | ErrorResponse = await response.json();
 
       if (response.ok) {
         const userData = data as { user: User };
@@ -162,13 +163,13 @@ export const useAuthStore = defineStore('auth', () => {
         localStorage.setItem('user', JSON.stringify(userData.user));
         return userData.user;
       } else {
-        const errorData = data as { message: string };
+        const errorData = data as ErrorResponse;
         console.error('Erro ao buscar dados do usuário:', errorData.message);
-        clearAuthData(); // Limpa dados se o token for inválido
+        clearAuthData();
         await router.push('/login');
         return null;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro de rede ao buscar dados do usuário:', error);
       clearAuthData();
       await router.push('/login');
@@ -178,7 +179,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => { // Adicionado Promise<void>
     clearAuthData();
     Notify.create({
       type: 'info',
@@ -194,9 +195,9 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     login,
     register,
-    userName, // <-- EXPORTAR
-    userEmail, // <-- EXPORTAR
-    isAdmin, // <-- EXPORTAR
+    userName,
+    userEmail,
+    isAdmin,
     getMe,
     logout,
   };

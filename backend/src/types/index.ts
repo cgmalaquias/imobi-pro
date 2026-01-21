@@ -6,7 +6,3 @@ export interface JwtPayload {
   email: string;
   role: UserRole;
 }
-
-export interface AuthRequest extends Request {
-  user?: JwtPayload;
-}

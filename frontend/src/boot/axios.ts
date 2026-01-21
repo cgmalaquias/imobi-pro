@@ -1,6 +1,9 @@
 import { boot } from 'quasar/wrappers';
 import type { AxiosInstance } from 'axios';
 import axios from 'axios';
+import { useAuthStore } from 'src/stores/auth';
+import { Notify } from 'quasar';
+import type { Router } from 'vue-router'; // Importar Router para tipagem
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
@@ -9,21 +12,43 @@ declare module '@vue/runtime-core' {
   }
 }
 
-// Be careful when using SSR for cross-request state pollution
-// due to creating a Singleton instance here;
-// if not running SSR, feel free to change the export into a default export.
-const api = axios.create({ baseURL: 'http://localhost:3000/api' }); // <-- Certifique-se que a porta é 3000
+const api = axios.create({ baseURL: process.env.API_URL || 'http://localhost:3000/api' });
 
-export default boot(({ app }) => {
-  // for use inside Vue files (Options API) through this.$axios and this.$api
-
+export default boot(({ app, router }: { app: any; router: Router }) => { // Tipagem explícita para router
   app.config.globalProperties.$axios = axios;
-  // ^ ^ ^ this will allow you to use this.$axios (for Vue Options API form)
-  //       so you won't necessarily have to import axios in each vue file
-
   app.config.globalProperties.$api = api;
-  // ^ ^ ^ this will allow you to use this.$api (for Vue Options API form)
-  //       so you can easily perform requests against your app's API
+
+  api.interceptors.request.use(
+    (config) => {
+      const authStore = useAuthStore();
+      if (authStore.token) {
+        config.headers.Authorization = `Bearer ${authStore.token}`;
+      }
+      return config;
+    },
+    (error: any) => { // Usar any para erro do interceptor, pois pode ser variado
+      console.error('❌ Erro no interceptor de requisição:', error);
+      return Promise.reject(error);
+    }
+  );
+
+  api.interceptors.response.use(
+    (response) => response,
+    async (error: any) => { // Usar any para erro do interceptor
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.error('❌ Erro 401/403 - Token inválido ou expirado');
+        const authStore = useAuthStore();
+        authStore.logout();
+        Notify.create({
+          type: 'negative',
+          message: 'Sessão expirada ou não autorizado. Faça login novamente.',
+          position: 'top-right',
+        });
+        await router.push({ name: 'login' });
+      }
+      return Promise.reject(error);
+    }
+  );
 });
 
 export { api };

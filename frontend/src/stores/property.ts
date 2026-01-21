@@ -51,6 +51,7 @@ export interface PropertyFilters {
   city?: string;
   status?: PropertyStatus;
   featured?: boolean;
+  search?: string; // Adicionado search para consistência
 }
 
 export interface PropertyResponse {
@@ -73,33 +74,33 @@ export const usePropertyStore = defineStore('property', {
   state: () => ({
     properties: [] as Property[],
     currentProperty: null as Property | null,
-    loading: false,
+    loading: false as boolean,
     error: null as string | null,
-    total: 0,
-    page: 1,
-    totalPages: 0
+    total: 0 as number,
+    page: 1 as number,
+    totalPages: 0 as number
   }),
 
   getters: {
-    getPropertyById: (state) => (id: string) => {
+    getPropertyById: (state) => (id: string): Property | undefined => {
       return state.properties.find((p) => p.id === id);
     },
 
-    featuredProperties: (state) => {
+    featuredProperties: (state): Property[] => {
       return state.properties.filter((p) => p.featured);
     },
 
-    propertiesByType: (state) => (type: PropertyType) => {
+    propertiesByType: (state) => (type: PropertyType): Property[] => {
       return state.properties.filter((p) => p.type === type);
     },
 
-    propertiesByCity: (state) => (city: string) => {
+    propertiesByCity: (state) => (city: string): Property[] => {
       return state.properties.filter((p) =>
         p.city.toLowerCase().includes(city.toLowerCase())
       );
     },
 
-    availableProperties: (state) => {
+    availableProperties: (state): Property[] => {
       return state.properties.filter((p) => p.status === 'DISPONIVEL');
     }
   },
@@ -118,7 +119,7 @@ export const usePropertyStore = defineStore('property', {
         this.totalPages = response.data.totalPages;
 
         return response.data;
-      } catch (err) {
+      } catch (err: unknown) {
         const error = err as AxiosError<ErrorResponse>;
         this.error = error.response?.data?.message || 'Erro ao buscar imóveis';
         throw error;
@@ -127,32 +128,35 @@ export const usePropertyStore = defineStore('property', {
       }
     },
 
-    async fetchPropertyById(id: string): Promise<Property> {
+    async fetchPropertyById(id: string): Promise<Property | null> {
       this.loading = true;
       this.error = null;
-
       try {
         const response = await api.get<Property>(`/properties/${id}`);
         this.currentProperty = response.data;
         return response.data;
-      } catch (err) {
+      } catch (err: unknown) {
         const error = err as AxiosError<ErrorResponse>;
         this.error = error.response?.data?.message || 'Erro ao buscar imóvel';
+        this.currentProperty = null;
         throw error;
       } finally {
         this.loading = false;
       }
     },
 
-    async createProperty(data: Partial<Property>): Promise<Property> {
+    async createProperty(propertyData: FormData): Promise<Property> { // <-- Alterado para FormData
       this.loading = true;
       this.error = null;
-
       try {
-        const response = await api.post<Property>('/properties', data);
-        this.properties.unshift(response.data);
+        const response = await api.post<Property>('/properties', propertyData, { // <-- Adicionado headers para FormData
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        this.properties.push(response.data);
         return response.data;
-      } catch (err) {
+      } catch (err: unknown) {
         const error = err as AxiosError<ErrorResponse>;
         this.error = error.response?.data?.message || 'Erro ao criar imóvel';
         throw error;
@@ -161,24 +165,18 @@ export const usePropertyStore = defineStore('property', {
       }
     },
 
-    async updateProperty(id: string, data: Partial<Property>): Promise<Property> {
+    async updateProperty(id: string, propertyData: Partial<Property>): Promise<Property> {
       this.loading = true;
       this.error = null;
-
       try {
-        const response = await api.put<Property>(`/properties/${id}`, data);
-
+        const response = await api.put<Property>(`/properties/${id}`, propertyData);
         const index = this.properties.findIndex((p) => p.id === id);
         if (index !== -1) {
           this.properties[index] = response.data;
         }
-
-        if (this.currentProperty?.id === id) {
-          this.currentProperty = response.data;
-        }
-
+        this.currentProperty = response.data; // Atualiza o currentProperty também
         return response.data;
-      } catch (err) {
+      } catch (err: unknown) {
         const error = err as AxiosError<ErrorResponse>;
         this.error = error.response?.data?.message || 'Erro ao atualizar imóvel';
         throw error;
@@ -190,16 +188,10 @@ export const usePropertyStore = defineStore('property', {
     async deleteProperty(id: string): Promise<void> {
       this.loading = true;
       this.error = null;
-
       try {
         await api.delete(`/properties/${id}`);
-
         this.properties = this.properties.filter((p) => p.id !== id);
-
-        if (this.currentProperty?.id === id) {
-          this.currentProperty = null;
-        }
-      } catch (err) {
+      } catch (err: unknown) {
         const error = err as AxiosError<ErrorResponse>;
         this.error = error.response?.data?.message || 'Erro ao excluir imóvel';
         throw error;
@@ -208,20 +200,19 @@ export const usePropertyStore = defineStore('property', {
       }
     },
 
-    async toggleFeatured(id: string): Promise<Property> {
+    async toggleFeatured(id: string): Promise<void> {
       this.loading = true;
       this.error = null;
-
       try {
         const response = await api.patch<Property>(`/properties/${id}/featured`);
-
         const index = this.properties.findIndex((p) => p.id === id);
         if (index !== -1) {
-          this.properties[index] = response.data;
+          this.properties[index].featured = response.data.featured;
         }
-
-        return response.data;
-      } catch (err) {
+        if (this.currentProperty?.id === id) {
+          this.currentProperty.featured = response.data.featured;
+        }
+      } catch (err: unknown) {
         const error = err as AxiosError<ErrorResponse>;
         this.error = error.response?.data?.message || 'Erro ao atualizar destaque';
         throw error;
@@ -230,10 +221,9 @@ export const usePropertyStore = defineStore('property', {
       }
     },
 
-    async uploadImages(propertyId: string, files: File[]): Promise<ImageUploadResponse> {
+    async uploadImages(propertyId: string, files: File[]): Promise<PropertyImage[]> {
       this.loading = true;
       this.error = null;
-
       try {
         const formData = new FormData();
         files.forEach((file) => {
@@ -245,13 +235,16 @@ export const usePropertyStore = defineStore('property', {
           formData,
           {
             headers: {
-              'Content-Type': 'multipart/form-data'
-            }
+              'Content-Type': 'multipart/form-data',
+            },
           }
         );
-
-        return response.data;
-      } catch (err) {
+        // Atualiza as imagens do imóvel atual no store, se ele estiver carregado
+        if (this.currentProperty && this.currentProperty.id === propertyId) {
+          this.currentProperty.images = [...(this.currentProperty.images || []), ...response.data.images];
+        }
+        return response.data.images;
+      } catch (err: unknown) {
         const error = err as AxiosError<ErrorResponse>;
         this.error = error.response?.data?.message || 'Erro ao fazer upload de imagens';
         throw error;
@@ -263,12 +256,15 @@ export const usePropertyStore = defineStore('property', {
     async deleteImage(imageId: string): Promise<void> {
       this.loading = true;
       this.error = null;
-
       try {
         await api.delete(`/properties/images/${imageId}`);
-      } catch (err) {
+        // Remove a imagem do imóvel atual no store, se ele estiver carregado
+        if (this.currentProperty?.images) {
+          this.currentProperty.images = this.currentProperty.images.filter(img => img.id !== imageId);
+        }
+      } catch (err: unknown) {
         const error = err as AxiosError<ErrorResponse>;
-        this.error = error.response?.data?.message || 'Erro ao excluir imagem';
+        this.error = error.response?.data?.message || 'Erro ao deletar imagem';
         throw error;
       } finally {
         this.loading = false;

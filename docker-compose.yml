@@ -1,154 +1,55 @@
-version: "3.8"
-
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: imobi_postgres
+    container_name: imobiliaria-db
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-imobi_db}
-      TZ: America/Sao_Paulo
-    ports:
-      - "${DB_PORT:-5432}:5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: imobiliaria
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - imobi_network
+      - imobiliaria-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
 
-  # Backend API
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: imobi_backend
+    image: reinodigital/imobiliaria-backend:latest
+    container_name: imobiliaria-api
+    restart: unless-stopped
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
-      PORT: ${PORT:-3000}
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: ${DB_NAME:-imobi_db}
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      JWT_SECRET: ${JWT_SECRET:-sua_chave_secreta_super_segura}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080,http://localhost:9000}
-      TZ: America/Sao_Paulo
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/imobiliaria
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3000
     ports:
-      - "${PORT:-3000}:3000"
+      - "3000:3000"
     volumes:
-      - ./backend/src:/app/src
-      - ./backend/uploads:/app/uploads
-      - backend_node_modules:/app/node_modules
+      - ./uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
     networks:
-      - imobi_network
-    restart: unless-stopped
-    command: npm run dev
+      - imobiliaria-network
 
-  # Frontend Application
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: imobi_frontend
-    environment:
-      VUE_APP_API_URL: ${VUE_APP_API_URL:-http://localhost:3000/api}
-      VUE_APP_NAME: ${VUE_APP_NAME:-Imobiliária Pro}
-      NODE_ENV: ${NODE_ENV:-development}
-    ports:
-      - "${FRONTEND_PORT:-8080}:8080"
-    volumes:
-      - ./frontend/src:/app/src
-      - frontend_node_modules:/app/node_modules
-    depends_on:
-      - backend
-    networks:
-      - imobi_network
+    image: reinodigital/imobiliaria-frontend:latest
+    container_name: imobiliaria-frontend
     restart: unless-stopped
-    command: npm run dev
-
-  # Redis Cache (Opcional)
-  redis:
-    image: redis:7-alpine
-    container_name: imobi_redis
-    environment:
-      TZ: America/Sao_Paulo
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - imobi_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-    profiles:
-      - with-cache
-
-  # pgAdmin (Gerenciador PostgreSQL - Opcional)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: imobi_pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-      TZ: America/Sao_Paulo
-    ports:
-      - "${PGADMIN_PORT:-5050}:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    networks:
-      - imobi_network
-    restart: unless-stopped
-    profiles:
-      - with-admin
-
-  # Nginx Reverse Proxy (Opcional - Para produção)
-  nginx:
-    image: nginx:alpine
-    container_name: imobi_nginx
     ports:
       - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - backend
-      - frontend
     networks:
-      - imobi_network
-    restart: unless-stopped
-    profiles:
-      - production
+      - imobiliaria-network
 
 volumes:
   postgres_data:
-    driver: local
-  redis_data:
-    driver: local
-  pgadmin_data:
-    driver: local
-  backend_node_modules:
-    driver: local
-  frontend_node_modules:
-    driver: local
 
 networks:
-  imobi_network:
+  imobiliaria-network:
     driver: bridge

@@ -3,6 +3,47 @@ import type { RouteRecordRaw } from 'vue-router';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
+    // component: () => import('layouts/PublicLayout.vue'),
+    component: () => import('layouts/SiteLayout.vue'),
+    children: [
+      {
+      path: '',
+      name: 'public-home',
+      component: () => import('pages/site/SiteHomePage.vue'),
+    },
+      {
+        path: 'imoveis',
+        name: 'public-properties',
+        component: () => import('pages/public/PublicPropertyListPage.vue'),
+      },
+      {
+        path: 'imovel/:id',
+        name: 'public-property-details',
+        component: () => import('pages/public/PublicPropertyDetailsPage.vue'),
+      },
+      {
+        path: 'contato',
+        name: 'contact',
+        component: () => import('pages/ContactPage.vue'),
+      },
+    ],
+  },
+    // rotas de autenticação pública
+    {
+    path: '/login',
+    name: 'login',
+    component: () => import('pages/auth/LoginPage.vue'),
+    meta: { title: 'Login' }
+  },
+  {
+    path: '/register',
+    name: 'register',
+    component: () => import('pages/auth/RegisterPage.vue'),
+    meta: { title: 'Cadastro' }
+  },
+  // Rotas Administrativas
+  {
+    path: '/admin',
     component: () => import('layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
     children: [
@@ -16,25 +57,25 @@ const routes: RouteRecordRaw[] = [
         path: 'properties',
         name: 'properties',
         component: () => import('pages/properties/PropertyListPage.vue'),
-        meta: { title: 'Imóveis' }
+        meta: { title: 'Imóveis', requiresAuth: false }
       },
       {
         path: 'properties/create',
         name: 'property-create',
         component: () => import('pages/properties/PropertyFormPage.vue'),
-        meta: { title: 'Cadastrar Imóvel' }
+        meta: { title: 'Cadastrar Imóvel', requiresAuth: false }
       },
       {
         path: 'properties/:id',
-        name: 'property-detail',
+        name: 'property-details',
         component: () => import('pages/properties/PropertyDetailPage.vue'),
-        meta: { title: 'Detalhes do Imóvel' }
+        meta: { title: 'Detalhes do Imóvel', requiresAuth: false }
       },
       {
         path: 'properties/:id/edit',
         name: 'property-edit',
         component: () => import('pages/properties/PropertyFormPage.vue'),
-        meta: { title: 'Editar Imóvel' }
+        meta: { title: 'Editar Imóvel', requiresAuth: true, roles: ['ADMIN'] },
       },
       {
         path: 'clients',
@@ -86,18 +127,7 @@ const routes: RouteRecordRaw[] = [
       }
     ]
   },
-  {
-    path: '/login',
-    name: 'login',
-    component: () => import('pages/auth/LoginPage.vue'),
-    meta: { title: 'Login' }
-  },
-  {
-    path: '/register',
-    name: 'register',
-    component: () => import('pages/auth/RegisterPage.vue'),
-    meta: { title: 'Cadastro' }
-  },
+
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue')

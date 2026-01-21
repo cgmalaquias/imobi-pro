@@ -12,55 +12,15 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true,
-    "baseUrl": "./src",
-    "paths": {
-      "@models/*": [
-        "models/*"
-      ],
-      "@models": [
-        "models"
-      ],
-      "@controllers/*": [
-        "controllers/*"
-      ],
-      "@routes/*": [
-        "routes/*"
-      ],
-      "@middlewares/*": [
-        "middlewares/*"
-      ],
-      "@config/*": [
-        "config/*"
-      ],
-      "@types/*": [
-        "types/*"
-      ],
-      "@types": [
-        "types"
-      ],
-      "@utils/*": [
-        "utils/*"
-      ]
-    },
-    "types": [
-      "node"
-    ],
-    "typeRoots": [
-      "./node_modules/@types"
-    ]
+    "sourceMap": true
   },
   "include": [
-    "src/**/*",
-    "test-controller.ts"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "**/*.spec.ts"
+    "dist"
   ]
 }

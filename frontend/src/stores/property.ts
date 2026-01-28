@@ -1,282 +1,102 @@
-import { defineStore } from 'pinia';
-import { api } from 'src/boot/api';
-import type { AxiosError } from 'axios';
+// FILE: frontend/src/services/property.service.ts
+import { api } from 'src/boot/api'; // Importar o helper 'api'
 
-export type PropertyType = 'CASA' | 'APARTAMENTO' | 'TERRENO' | 'COMERCIAL' | 'RURAL';
-export type PropertyStatus = 'DISPONIVEL' | 'RESERVADO' | 'VENDIDO' | 'ALUGADO' | 'INATIVO';
-export type TransactionType = 'VENDA' | 'ALUGUEL' | 'AMBOS';
+// Interfaces (já definidas anteriormente)
+export type PropertyType = 'CASA' | 'APARTAMENTO' | 'COMERCIAL' | 'TERRENO' | 'FAZENDA';
+export type PropertyStatus = 'DISPONIVEL' | 'VENDIDO' | 'ALUGADO';
 
 export interface PropertyImage {
   id: string;
-  propertyId: string;
   url: string;
-  order: number;
-  createdAt: string;
+  property_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Property {
   id: string;
   title: string;
-  description?: string;
+  description: string;
+  price: number;
   type: PropertyType;
-  transactionType: TransactionType;
-  status: PropertyStatus;
-  priceSale?: number;
-  priceRent?: number;
   address: string;
-  neighborhood: string;
   city: string;
   state: string;
-  zipCode?: string;
-  areaTotal?: number;
-  areaBuilt?: number;
+  zip_code?: string;
   bedrooms?: number;
   bathrooms?: number;
-  garage?: number;
-  featured: boolean;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
-  images?: PropertyImage[];
-  user?: {
-    id: string;
-    name: string;
-  };
+  area?: number;
+  status: PropertyStatus;
+  created_at: string;
+  updated_at: string;
+  images: PropertyImage[]; // Relação com imagens
 }
 
 export interface PropertyFilters {
   page?: number;
   limit?: number;
+  status?: PropertyStatus;
   type?: PropertyType;
   city?: string;
-  status?: PropertyStatus;
-  featured?: boolean;
-  search?: string; // Adicionado search para consistência
+  minPrice?: number;
+  maxPrice?: number;
 }
 
-export interface PropertyResponse {
-  properties: Property[];
+// Interface para a resposta paginada da API Laravel
+export interface PaginatedResponse<T> {
+  data: T[];
+  current_page: number;
+  first_page_url: string;
+  from: number;
+  last_page: number;
+  links: { url: string | null; label: string; active: boolean }[];
+  next_page_url: string | null;
+  path: string;
+  per_page: number;
+  prev_page_url: string | null;
+  to: number;
   total: number;
-  page: number;
-  totalPages: number;
 }
 
-interface ErrorResponse {
-  message: string;
-}
-
-interface ImageUploadResponse {
-  message: string;
-  images: PropertyImage[];
-}
-
-export const usePropertyStore = defineStore('property', {
-  state: () => ({
-    properties: [] as Property[],
-    currentProperty: null as Property | null,
-    loading: false as boolean,
-    error: null as string | null,
-    total: 0 as number,
-    page: 1 as number,
-    totalPages: 0 as number
-  }),
-
-  getters: {
-    getPropertyById: (state) => (id: string): Property | undefined => {
-      return state.properties.find((p) => p.id === id);
-    },
-
-    featuredProperties: (state): Property[] => {
-      return state.properties.filter((p) => p.featured);
-    },
-
-    propertiesByType: (state) => (type: PropertyType): Property[] => {
-      return state.properties.filter((p) => p.type === type);
-    },
-
-    propertiesByCity: (state) => (city: string): Property[] => {
-      return state.properties.filter((p) =>
-        p.city.toLowerCase().includes(city.toLowerCase())
-      );
-    },
-
-    availableProperties: (state): Property[] => {
-      return state.properties.filter((p) => p.status === 'DISPONIVEL');
+export const propertyService = {
+  async getAll(params?: PropertyFilters): Promise<PaginatedResponse<Property>> {
+    const query = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') {
+          query.append(k, String(v));
+        }
+      });
     }
+    const qs = query.toString();
+    // Usando o helper 'api' para fazer a requisição GET
+    return api.get(`/properties${qs ? `?${qs}` : ''}`);
   },
 
-  actions: {
-    async fetchProperties(filters?: PropertyFilters): Promise<PropertyResponse> {
-      this.loading = true;
-      this.error = null;
+  async getById(id: string): Promise<Property> {
+    // Usando o helper 'api' para fazer a requisição GET
+    return api.get(`/properties/${id}`);
+  },
 
-      try {
-        const response = await api.get<PropertyResponse>('/properties', { params: filters });
+  async create(payload: FormData): Promise<Property> {
+    // Usando o helper 'api.upload' para FormData
+    return api.upload('/properties', payload);
+  },
 
-        this.properties = response.data.properties;
-        this.total = response.data.total;
-        this.page = response.data.page;
-        this.totalPages = response.data.totalPages;
+  async update(id: string, payload: FormData): Promise<Property> {
+    // Usando o helper 'api.upload' para FormData (Laravel espera PUT/POST para FormData)
+    // Nota: Para PUT com FormData, o Laravel pode precisar de um campo _method=PUT
+    payload.append('_method', 'PUT');
+    return api.upload(`/properties/${id}`, payload);
+  },
 
-        return response.data;
-      } catch (err: unknown) {
-        const error = err as AxiosError<ErrorResponse>;
-        this.error = error.response?.data?.message || 'Erro ao buscar imóveis';
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
+  async delete(id: string): Promise<void> {
+    // Usando o helper 'api' para fazer a requisição DELETE
+    return api.delete(`/properties/${id}`);
+  },
 
-    async fetchPropertyById(id: string): Promise<Property | null> {
-      this.loading = true;
-      this.error = null;
-      try {
-        const response = await api.get<Property>(`/properties/${id}`);
-        this.currentProperty = response.data;
-        return response.data;
-      } catch (err: unknown) {
-        const error = err as AxiosError<ErrorResponse>;
-        this.error = error.response?.data?.message || 'Erro ao buscar imóvel';
-        this.currentProperty = null;
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async createProperty(propertyData: FormData): Promise<Property> { // <-- Alterado para FormData
-      this.loading = true;
-      this.error = null;
-      try {
-        const response = await api.post<Property>('/properties', propertyData, { // <-- Adicionado headers para FormData
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        this.properties.push(response.data);
-        return response.data;
-      } catch (err: unknown) {
-        const error = err as AxiosError<ErrorResponse>;
-        this.error = error.response?.data?.message || 'Erro ao criar imóvel';
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async updateProperty(id: string, propertyData: Partial<Property>): Promise<Property> {
-      this.loading = true;
-      this.error = null;
-      try {
-        const response = await api.put<Property>(`/properties/${id}`, propertyData);
-        const index = this.properties.findIndex((p) => p.id === id);
-        if (index !== -1) {
-          this.properties[index] = response.data;
-        }
-        this.currentProperty = response.data; // Atualiza o currentProperty também
-        return response.data;
-      } catch (err: unknown) {
-        const error = err as AxiosError<ErrorResponse>;
-        this.error = error.response?.data?.message || 'Erro ao atualizar imóvel';
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async deleteProperty(id: string): Promise<void> {
-      this.loading = true;
-      this.error = null;
-      try {
-        await api.delete(`/properties/${id}`);
-        this.properties = this.properties.filter((p) => p.id !== id);
-      } catch (err: unknown) {
-        const error = err as AxiosError<ErrorResponse>;
-        this.error = error.response?.data?.message || 'Erro ao excluir imóvel';
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async toggleFeatured(id: string): Promise<void> {
-      this.loading = true;
-      this.error = null;
-      try {
-        const response = await api.patch<Property>(`/properties/${id}/featured`);
-        const index = this.properties.findIndex((p) => p.id === id);
-        if (index !== -1) {
-          this.properties[index].featured = response.data.featured;
-        }
-        if (this.currentProperty?.id === id) {
-          this.currentProperty.featured = response.data.featured;
-        }
-      } catch (err: unknown) {
-        const error = err as AxiosError<ErrorResponse>;
-        this.error = error.response?.data?.message || 'Erro ao atualizar destaque';
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async uploadImages(propertyId: string, files: File[]): Promise<PropertyImage[]> {
-      this.loading = true;
-      this.error = null;
-      try {
-        const formData = new FormData();
-        files.forEach((file) => {
-          formData.append('images', file);
-        });
-
-        const response = await api.post<ImageUploadResponse>(
-          `/properties/${propertyId}/images`,
-          formData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          }
-        );
-        // Atualiza as imagens do imóvel atual no store, se ele estiver carregado
-        if (this.currentProperty && this.currentProperty.id === propertyId) {
-          this.currentProperty.images = [...(this.currentProperty.images || []), ...response.data.images];
-        }
-        return response.data.images;
-      } catch (err: unknown) {
-        const error = err as AxiosError<ErrorResponse>;
-        this.error = error.response?.data?.message || 'Erro ao fazer upload de imagens';
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async deleteImage(imageId: string): Promise<void> {
-      this.loading = true;
-      this.error = null;
-      try {
-        await api.delete(`/properties/images/${imageId}`);
-        // Remove a imagem do imóvel atual no store, se ele estiver carregado
-        if (this.currentProperty?.images) {
-          this.currentProperty.images = this.currentProperty.images.filter(img => img.id !== imageId);
-        }
-      } catch (err: unknown) {
-        const error = err as AxiosError<ErrorResponse>;
-        this.error = error.response?.data?.message || 'Erro ao deletar imagem';
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    clearError(): void {
-      this.error = null;
-    },
-
-    clearCurrentProperty(): void {
-      this.currentProperty = null;
-    }
-  }
-});
+  async deleteImage(propertyId: string, imageId: string): Promise<{ message: string }> {
+    // Usando o helper 'api' para fazer a requisição DELETE
+    return api.delete(`/properties/${propertyId}/images/${imageId}`);
+  },
+};

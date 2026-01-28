@@ -2,25 +2,19 @@
   <div class="client-form-page">
     <div class="form-container">
       <h1>{{ isEditing ? 'Editar Cliente' : 'Novo Cliente' }}</h1>
-      
+
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
           <label for="name">Nome *</label>
-          <input 
-            id="name"
-            v-model="form.name" 
-            type="text" 
-            placeholder="Nome do cliente"
-            required
-          />
+          <input id="name" v-model="form.name" type="text" placeholder="Nome do cliente" required />
         </div>
 
         <div class="form-group">
           <label for="email">Email *</label>
-          <input 
+          <input
             id="email"
-            v-model="form.email" 
-            type="email" 
+            v-model="form.email"
+            type="email"
             placeholder="email@example.com"
             required
           />
@@ -28,48 +22,31 @@
 
         <div class="form-group">
           <label for="phone">Telefone</label>
-          <input 
-            id="phone"
-            v-model="form.phone" 
-            type="tel" 
-            placeholder="(00) 00000-0000"
-          />
+          <input id="phone" v-model="form.phone" type="tel" placeholder="(00) 00000-0000" />
         </div>
 
         <div class="form-group">
           <label for="cpf">CPF</label>
-          <input 
-            id="cpf"
-            v-model="form.cpf" 
-            type="text" 
-            placeholder="000.000.000-00"
-          />
+          <input id="cpf" v-model="form.cpf" type="text" placeholder="000.000.000-00" />
         </div>
 
         <div class="form-group">
           <label for="address">Endereço</label>
-          <input 
-            id="address"
-            v-model="form.address" 
-            type="text" 
-            placeholder="Rua, número..."
-          />
+          <input id="address" v-model="form.address" type="text" placeholder="Rua, número..." />
         </div>
 
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">
             {{ isEditing ? 'Atualizar' : 'Criar' }}
           </button>
-          <button type="button" class="btn btn-secondary" @click="handleCancel">
-            Cancelar
-          </button>
+          <button type="button" class="btn btn-secondary" @click="handleCancel">Cancelar</button>
         </div>
       </form>
     </div>
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 export default {
   name: 'ClientFormPage',
   data() {
@@ -79,16 +56,16 @@ export default {
         email: '',
         phone: '',
         cpf: '',
-        address: ''
+        address: '',
       },
-      isEditing: false
-    }
+      isEditing: false,
+    };
   },
   mounted() {
-    const clientId = this.$route.params.id
+    const clientId = this.$route.params.id;
     if (clientId) {
-      this.isEditing = true
-      this.loadClient(clientId)
+      this.isEditing = true;
+      this.loadClient(clientId);
     }
   },
   methods: {
@@ -105,14 +82,14 @@ export default {
       // } else {
       //   this.$api.createClient(this.form)
       // }
-      console.log('Form submitted:', this.form)
-      this.$router.push('/clients')
+      console.log('Form submitted:', this.form);
+      this.$router.push('/clients');
     },
     handleCancel() {
-      this.$router.push('/clients')
-    }
-  }
-}
+      this.$router.push('/clients');
+    },
+  },
+};
 </script>
 
 <style scoped>

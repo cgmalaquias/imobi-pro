@@ -4,47 +4,52 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PropertyController;
-use App\Http\Controllers\Api\VisitController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\VisitController; // Certifique-se de importar o VisitController
 
-// Tratar requisições OPTIONS (preflight CORS)
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
+
+// Rotas de Autenticação (públicas, exceto logout e me)
+Route::post('auth/register', [AuthController::class, 'register']);
+Route::post('auth/login', [AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('auth/logout', [AuthController::class, 'logout']);
+    Route::get('auth/me', [AuthController::class, 'me']);
+
+    // Rotas de Usuários (apenas para ADMIN)
+    Route::apiResource('users', UserController::class)->middleware('can:admin'); // Exemplo de gate/policy
+
+    // Rotas de Imóveis (CRUD completo, exceto index e show que são públicas)
+    Route::post('properties/{property}/images/{imageId}', [PropertyController::class, 'deleteImage']); // Rota para deletar imagem específica
+    Route::apiResource('properties', PropertyController::class)->except(['index', 'show']);
+
+    // Rotas de Visitas (CRUD completo, pode ser ajustado para roles específicas)
+    Route::apiResource('visits', VisitController::class);
+});
+
+// Rotas de Imóveis Públicas (sem autenticação)
+Route::get('properties', [PropertyController::class, 'index']);
+Route::get('properties/{property}', [PropertyController::class, 'show']);
+
+// Rotas de Visitas Públicas (para agendamento de cliente)
+Route::post('visits', [VisitController::class, 'store']); // Cliente pode agendar visita sem login
+
+// Rota para lidar com OPTIONS (CORS)
 Route::options('{any}', function () {
-    return response()->json([], 200);
+    return response()->json(['status' => 'ok'], 200);
 })->where('any', '.*');
 
-// ===== AUTENTICAÇÃO (Público) =====
-Route::post('/auth/register', [AuthController::class, 'register']);
-Route::post('/auth/login', [AuthController::class, 'login']);
-
-// ===== PROPERTIES (Público - Listagem e Detalhes) =====
-Route::get('/properties', [PropertyController::class, 'index']);
-Route::get('/properties/{property}', [PropertyController::class, 'show']);
-
-// ===== VISITS (Público - Agendar) =====
-Route::post('/visits', [VisitController::class, 'store']);
-
-// ===== Rotas Protegidas (Requer JWT) =====
-Route::middleware('auth:api')->group(function () {
-
-    // Autenticação
-    Route::post('/auth/logout', [AuthController::class, 'logout']);
-    Route::get('/auth/me', [AuthController::class, 'me']);
-    Route::post('/auth/refresh', [AuthController::class, 'refresh']);
-
-    // ===== ADMIN - Properties (CRUD) =====
-    Route::middleware('admin')->group(function () {
-        Route::post('/properties', [PropertyController::class, 'store']);
-        Route::put('/properties/{property}', [PropertyController::class, 'update']);
-        Route::delete('/properties/{property}', [PropertyController::class, 'destroy']);
-
-        // Visits (Gerenciar)
-        Route::get('/visits', [VisitController::class, 'index']);
-        Route::put('/visits/{visit}', [VisitController::class, 'update']);
-
-        // Users (Gerenciar)
-        Route::get('/users', [UserController::class, 'index']);
-        Route::post('/users', [UserController::class, 'store']);
-        Route::put('/users/{user}', [UserController::class, 'update']);
-        Route::delete('/users/{user}', [UserController::class, 'destroy']);
-    });
-});
+// Rota para servir arquivos do storage (se necessário)
+Route::get('storage/{path}', function ($path) {
+    return response()->file(storage_path('app/public/' . $path));
+})->where('path', '.*');

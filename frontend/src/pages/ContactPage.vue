@@ -33,12 +33,7 @@
 
             <div class="form-group">
               <label for="phone">Telefone</label>
-              <input
-                v-model="form.phone"
-                type="tel"
-                id="phone"
-                placeholder="(11) 99999-9999"
-              />
+              <input v-model="form.phone" type="tel" id="phone" placeholder="(11) 99999-9999" />
             </div>
 
             <div class="form-group">
@@ -64,14 +59,8 @@
             </div>
 
             <div class="form-group checkbox">
-              <input
-                v-model="form.newsletter"
-                type="checkbox"
-                id="newsletter"
-              />
-              <label for="newsletter">
-                Desejo receber notícias e atualizações por email
-              </label>
+              <input v-model="form.newsletter" type="checkbox" id="newsletter" />
+              <label for="newsletter"> Desejo receber notícias e atualizações por email </label>
             </div>
 
             <button type="submit" class="btn-submit">Enviar Mensagem</button>
@@ -160,7 +149,7 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 export default {
   name: 'ContactPage',
   data() {
@@ -345,7 +334,9 @@ h1 {
   font-size: 1.1rem;
   font-weight: bold;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .btn-submit:hover {
@@ -455,7 +446,9 @@ h1 {
   padding: 20px;
   border-radius: 8px;
   border-left: 4px solid #667eea;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .message-card:hover {

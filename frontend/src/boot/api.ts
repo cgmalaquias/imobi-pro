@@ -3,7 +3,8 @@ import { LoadingBar } from 'quasar'; // Importar LoadingBar
 
 // URL base da API Laravel
 // VERIFIQUE SE ESTA URL ESTÁ CORRETA E SEMPRE ATUALIZADA
-export const API_BASE_URL = 'https://imobiproapi.agenciareinodigital.com.br/api';
+// export const API_BASE_URL = 'https://imobiproapi.agenciareinodigital.com.br/api';
+export const API_BASE_URL = 'http://corretora-backend.ls/api';
 
 // Helper para fazer requisições
 export const api = {
@@ -12,14 +13,16 @@ export const api = {
 
     const token = localStorage.getItem('token');
 
-    const headers: HeadersInit = {
+    // CORREÇÃO AQUI: Declarar headers como Record<string, string>
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      ...options.headers,
+      // Espalhar outros headers, se existirem, garantindo que sejam strings
+      ...(options.headers as Record<string, string> || {}), // Cast para Record<string, string>
     };
 
     if (token) {
-      await headers['Authorization'] = `Bearer ${token}`;
+      headers['Authorization'] = `Bearer ${token}`; // Agora TypeScript aceita
     }
 
     try {

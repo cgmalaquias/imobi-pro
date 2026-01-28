@@ -2,9 +2,7 @@
   <div class="client-list-page">
     <div class="page-header">
       <h1>Clientes</h1>
-      <button @click="openAddClientModal" class="btn btn-primary">
-        + Novo Cliente
-      </button>
+      <button @click="openAddClientModal" class="btn btn-primary">+ Novo Cliente</button>
     </div>
 
     <div class="filters">
@@ -49,9 +47,7 @@
             </td>
             <td>{{ formatDate(client.createdAt) }}</td>
             <td class="actions">
-              <button @click="editClient(client.id)" class="btn btn-sm btn-info">
-                Editar
-              </button>
+              <button @click="editClient(client.id)" class="btn btn-sm btn-info">Editar</button>
               <button @click="deleteClient(client.id)" class="btn btn-sm btn-danger">
                 Deletar
               </button>
@@ -67,7 +63,7 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 export default {
   name: 'ClientListPage',
   data() {
@@ -80,7 +76,7 @@ export default {
   },
   computed: {
     filteredClients() {
-      return this.clients.filter(client => {
+      return this.clients.filter((client) => {
         const matchesSearch =
           client.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
           client.email.toLowerCase().includes(this.searchQuery.toLowerCase());

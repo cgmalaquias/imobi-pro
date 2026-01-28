@@ -13,8 +13,8 @@ class PropertyController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api')->except(['index', 'show']);
-        $this->middleware('admin')->only(['store', 'update', 'destroy']);
+        // $this->middleware('auth:api')->except(['index', 'show']);
+        // $this->middleware('admin')->only(['store', 'update', 'destroy']);
     }
 
     public function index(Request $request)

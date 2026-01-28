@@ -31,7 +31,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(JSON.parse(localStorage.getItem('user') || 'null'));
   const loading = ref<boolean>(false);
 
-  const API_BASE_URL: string = process.env.API_URL || 'http://localhost:3000/api';
+  const API_BASE_URL: string = process.env.API_URL || 'http://corretora-backend.ls/api';
 
   const setAuthData = (newToken: string, newUser: User): void => {
     token.value = newToken;

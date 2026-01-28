@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/api';
-import type { AxiosError } from 'axios';
 import type { User } from './auth';
 
 export interface UserFilters {
@@ -69,7 +68,7 @@ export const useUserStore = defineStore('user', {
 
         return response.data;
       } catch (err) {
-        const error = err as AxiosError<ErrorResponse>;
+
         this.error = error.response?.data?.message || 'Erro ao buscar usuários';
         throw error;
       } finally {

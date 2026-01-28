@@ -11,7 +11,6 @@
           <div class="text-subtitle1 q-mb-lg">
             Compra, venda e locação de imóveis com atendimento personalizado.
           </div>
-
           <!-- CTA / TELEFONE -->
           <div class="row items-center q-gutter-sm">
             <q-btn
@@ -65,7 +64,6 @@
               />
             </div>
           </div>
-
           <div class="row items-center q-col-gutter-md q-mt-sm">
             <div class="col-12 col-md-9">
               <q-input
@@ -91,7 +89,6 @@
               />
             </div>
           </div>
-
           <div class="text-right q-mt-xs">
             <q-btn
               flat
@@ -115,22 +112,14 @@
               As melhores opções de locação selecionadas para você.
             </div>
           </div>
-          <q-btn
-            flat
-            color="primary"
-            label="Ver todos para alugar"
-            @click="goToPropertyList('ALUGUEL')"
-          />
+          <q-btn flat color="primary" label="Ver todos" @click="goToPropertyList('ALUGUEL')" />
         </div>
-
         <q-inner-loading :showing="loadingRent">
           <q-spinner-gears size="40px" color="primary" />
         </q-inner-loading>
-
         <div v-if="!loadingRent && rentProperties.length === 0" class="text-grey-6 q-mt-md">
           Nenhum imóvel para alugar no momento.
         </div>
-
         <div v-else class="row q-col-gutter-md q-mt-sm">
           <div
             v-for="property in rentProperties"
@@ -143,32 +132,24 @@
       </div>
     </section>
 
-    <!-- SEÇÃO: IMÓVEIS PARA VENDER -->
+    <!-- SEÇÃO: IMÓVEIS PARA VENDA -->
     <section class="home-section home-section--alt">
       <div class="home-container">
         <div class="home-section__header">
           <div>
-            <div class="home-section__title">Imóveis para Vender</div>
+            <div class="home-section__title">Imóveis para Venda</div>
             <div class="home-section__subtitle">
-              As melhores oportunidades de compra em destaque.
+              Oportunidades imperdíveis para comprar seu novo lar.
             </div>
           </div>
-          <q-btn
-            flat
-            color="primary"
-            label="Ver todos para vender"
-            @click="goToPropertyList('VENDA')"
-          />
+          <q-btn flat color="primary" label="Ver todos" @click="goToPropertyList('VENDA')" />
         </div>
-
         <q-inner-loading :showing="loadingSale">
           <q-spinner-gears size="40px" color="primary" />
         </q-inner-loading>
-
         <div v-if="!loadingSale && saleProperties.length === 0" class="text-grey-6 q-mt-md">
           Nenhum imóvel para venda no momento.
         </div>
-
         <div v-else class="row q-col-gutter-md q-mt-sm">
           <div
             v-for="property in saleProperties"
@@ -196,15 +177,12 @@
             @click="goToPropertyList(undefined, true)"
           />
         </div>
-
         <q-inner-loading :showing="loadingFeatured">
           <q-spinner-gears size="40px" color="primary" />
         </q-inner-loading>
-
         <div v-if="!loadingFeatured && featuredProperties.length === 0" class="text-grey-6 q-mt-md">
           Nenhum imóvel em destaque no momento.
         </div>
-
         <div v-else class="row q-col-gutter-md q-mt-sm">
           <div
             v-for="property in featuredProperties"
@@ -220,38 +198,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import {
-  usePropertyStore,
+// CORREÇÃO AQUI: Importar do property.service.ts
+import type {
   Property,
   PropertyType,
   TransactionType,
   PropertyFilters,
-} from 'src/stores/property';
-import PropertyCard from 'src/components/PropertyCard.vue'; // vamos criar já já
+} from 'src/services/property.service';
+import { propertyService } from 'src/services/property.service'; // CORREÇÃO AQUI: Importar o serviço
+import PropertyCard from 'src/components/PropertyCard.vue';
 
 const router = useRouter();
-const propertyStore = usePropertyStore();
 
-// cores e identidade já estão no tema/global, aqui só usamos classes
+// CORREÇÃO AQUI: Removido usePropertyStore()
+// const propertyStore = usePropertyStore();
 
+// Definindo os filtros para a busca principal
 const filters = ref<PropertyFilters & { transactionType?: TransactionType; search?: string }>({
   page: 1,
-  limit: 12,
+  limit: 12, // Ajuste o limite conforme a necessidade para a busca principal
   type: undefined,
   city: undefined,
-  status: 'DISPONIVEL',
+  status: 'DISPONIVEL', // Ou 'TODOS' se você quiser mostrar vendidos/alugados também
   featured: undefined,
+  transactionType: undefined, // Adicionado para o filtro do banner
+  search: undefined, // Adicionado para o filtro do banner
 });
 
-// selects
+// Opções para os selects
 const propertyTypesOptions: Array<{ label: string; value: PropertyType }> = [
   { label: 'Casa', value: 'CASA' },
   { label: 'Apartamento', value: 'APARTAMENTO' },
   { label: 'Terreno', value: 'TERRENO' },
   { label: 'Comercial', value: 'COMERCIAL' },
-  { label: 'Rural', value: 'RURAL' },
+  { label: 'Rural', value: 'FAZENDA' }, // Ajustado para FAZENDA, se for o caso no backend
 ];
 
 const transactionTypesOptions: Array<{ label: string; value: TransactionType }> = [
@@ -260,7 +242,7 @@ const transactionTypesOptions: Array<{ label: string; value: TransactionType }> 
   { label: 'Ambos', value: 'AMBOS' },
 ];
 
-// estados de loading por seção
+// Estados de loading e listas de propriedades por seção
 const loadingRent = ref(false);
 const loadingSale = ref(false);
 const loadingFeatured = ref(false);
@@ -269,18 +251,35 @@ const rentProperties = ref<Property[]>([]);
 const saleProperties = ref<Property[]>([]);
 const featuredProperties = ref<Property[]>([]);
 
+// Função auxiliar para obter mensagem de erro (já definida em api.ts ou stores)
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message;
+  }
+  return 'Ocorreu um erro desconhecido.';
+};
+
+// Funções de carregamento para cada seção
 const loadRent = async (): Promise<void> => {
   loadingRent.value = true;
   try {
-    const data = await propertyStore.fetchProperties({
+    const response = await propertyService.getAll({
       page: 1,
       limit: 8,
       status: 'DISPONIVEL',
-      // assumindo que transactionType está no model (VENDA/ALUGUEL/AMBOS)
-    } as PropertyFilters & { transactionType?: TransactionType });
-    rentProperties.value = data.properties.filter(
-      (p) => p.transactionType === 'ALUGUEL' || p.transactionType === 'AMBOS',
-    );
+      transactionType: 'ALUGUEL', // Filtrar por ALUGUEL
+    });
+    rentProperties.value = response.data;
+  } catch (error: unknown) {
+    console.error('Erro ao carregar imóveis para alugar:', getErrorMessage(error));
   } finally {
     loadingRent.value = false;
   }
@@ -289,14 +288,15 @@ const loadRent = async (): Promise<void> => {
 const loadSale = async (): Promise<void> => {
   loadingSale.value = true;
   try {
-    const data = await propertyStore.fetchProperties({
+    const response = await propertyService.getAll({
       page: 1,
       limit: 8,
       status: 'DISPONIVEL',
+      transactionType: 'VENDA', // Filtrar por VENDA
     });
-    saleProperties.value = data.properties.filter(
-      (p) => p.transactionType === 'VENDA' || p.transactionType === 'AMBOS',
-    );
+    saleProperties.value = response.data;
+  } catch (error: unknown) {
+    console.error('Erro ao carregar imóveis para venda:', getErrorMessage(error));
   } finally {
     loadingSale.value = false;
   }
@@ -305,38 +305,51 @@ const loadSale = async (): Promise<void> => {
 const loadFeatured = async (): Promise<void> => {
   loadingFeatured.value = true;
   try {
-    const data = await propertyStore.fetchProperties({
+    const response = await propertyService.getAll({
       page: 1,
       limit: 8,
       status: 'DISPONIVEL',
-      featured: true,
+      featured: true, // Filtrar por destaque
     });
-    featuredProperties.value = data.properties;
+    featuredProperties.value = response.data;
+  } catch (error: unknown) {
+    console.error('Erro ao carregar imóveis em destaque:', getErrorMessage(error));
   } finally {
     loadingFeatured.value = false;
   }
 };
 
-const goToPropertyList = (transactionType?: TransactionType, onlyFeatured = false): void => {
+// Função para navegar para a lista de propriedades com filtros
+const goToPropertyList = async (
+  transactionType?: TransactionType,
+  onlyFeatured = false,
+): Promise<void> => {
   const query: Record<string, string> = {};
 
+  // Adiciona os filtros do bloco central
   if (filters.value.type) query.type = filters.value.type;
   if (filters.value.city) query.city = filters.value.city;
   if (filters.value.search) query.search = filters.value.search;
+  if (filters.value.transactionType) query.transactionType = filters.value.transactionType;
+
+  // Sobrescreve ou adiciona filtros específicos da seção
   if (transactionType) query.transactionType = transactionType;
   if (onlyFeatured) query.featured = 'true';
 
-  router.push({ name: 'public-properties', query });
+  await router.push({ name: 'public-properties', query });
 };
 
-const openPublicDetails = (id: string): void => {
-  router.push({ name: 'public-property-details', params: { id } });
+// Função para abrir detalhes de um imóvel
+const openPublicDetails = async (id: string): Promise<void> => {
+  await router.push({ name: 'public-property-details', params: { id } });
 };
 
+// Função para abrir WhatsApp
 const openWhatsApp = (): void => {
   window.open('https://wa.me/5541995850231', '_blank');
 };
 
+// Carrega todas as seções ao montar o componente
 onMounted(async () => {
   await Promise.all([loadRent(), loadSale(), loadFeatured()]);
 });
@@ -346,7 +359,6 @@ onMounted(async () => {
 .bg-home {
   background: #f5f5f5;
 }
-
 /* banner */
 .home-hero {
   position: relative;
@@ -355,7 +367,6 @@ onMounted(async () => {
   background-size: cover;
   background-position: center;
 }
-
 .home-hero__overlay {
   height: 100%;
   width: 100%;
@@ -363,51 +374,42 @@ onMounted(async () => {
   display: flex;
   align-items: center;
 }
-
 .home-hero__content {
   max-width: 600px;
   margin-left: 8%;
   color: white;
 }
-
 /* container central */
 .home-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 16px;
 }
-
 /* filtro */
 .home-filter {
   margin-top: -60px;
 }
-
 .home-filter__card {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
 }
-
 /* seções */
 .home-section {
   padding: 32px 0;
   background: #f5f5f5;
 }
-
 .home-section--alt {
   background: #e9e9e9;
 }
-
 .home-section__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
 }
-
 .home-section__title {
   font-size: 20px;
   font-weight: 700;
 }
-
 .home-section__subtitle {
   font-size: 14px;
   color: #666;

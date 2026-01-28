@@ -72,12 +72,12 @@ export default configure((ctx) => {
       plugins: [
         'Notify',
         'Dialog',
-        'Loading',
-        'LoadingBar'
+        // 'Loading',
+        // 'LoadingBar'
       ]
     },
 
-    animations: [],
+    // animations: [],
 
     ssr: {
       pwa: false,

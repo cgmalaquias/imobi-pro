@@ -1,33 +1,19 @@
-<!-- frontend/src/App.vue -->
 <template>
-	<router-view />
+  <router-view />
 </template>
 
-<script setup lang="ts">
-	import { onMounted } from "vue";
-	import { useAuthStore } from "src/stores/auth";
-	import { useRouter } from "vue-router";
+<style>
+/* Debug: remover qualquer overlay invisível */
+.q-loading-bar {
+  display: none !important;
+}
 
-	const authStore = useAuthStore();
-	const router = useRouter();
+.q-inner-loading {
+  z-index: 1000 !important;
+}
 
-	onMounted(async () => {
-		// Se houver um token, tente buscar os dados do usuário para validar a sessão
-		if (authStore.token) {
-			const user = await authStore.getMe();
-			if (!user) {
-				// Se getMe falhar (token inválido/expirado), ele já redireciona para /login
-				// ou limpa os dados. Podemos adicionar um redirecionamento explícito aqui se necessário.
-				// router.push('/login');
-			}
-		} else {
-			// Se não houver token, e a rota atual requer autenticação, redirecione para login
-			if (
-				router.currentRoute.value.meta.requiresAuth &&
-				router.currentRoute.value.name !== "login"
-			) {
-				await router.push("/login");
-			}
-		}
-	});
-</script>
+/* Garantir que nada está bloqueando */
+* {
+  pointer-events: auto !important;
+}
+</style>

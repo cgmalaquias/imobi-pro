@@ -10,7 +10,7 @@ export default configure((ctx) => {
       errors: true
     },
 
-    boot: ['axios'],
+    boot: ['api'],
 
     css: ['app.scss'],
 

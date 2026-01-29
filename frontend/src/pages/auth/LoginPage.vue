@@ -102,7 +102,7 @@ const handleLogin = async () => {
     });
 
     // Sempre redirecionar para admin
-    router.push('/admin');
+    await router.push('/admin');
   } catch (error: any) {
     $q.notify({
       type: 'negative',

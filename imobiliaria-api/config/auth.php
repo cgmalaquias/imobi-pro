@@ -17,6 +17,17 @@ return [
             'driver' => 'jwt',
             'provider' => 'users',
         ],
+        // Adicione o guard 'sanctum' aqui se você pretende usá-lo
+        // 'sanctum' => [
+        //     'driver' => 'sanctum',
+        //     'provider' => 'users',
+        // ],
+
+        // Seu guard JWT (se estiver usando tymondesigns/jwt-auth)
+        'jwt' => [
+            'driver' => 'jwt',
+            'provider' => 'users',
+        ],
     ],
 
     'providers' => [

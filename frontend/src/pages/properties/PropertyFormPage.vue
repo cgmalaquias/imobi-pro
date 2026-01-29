@@ -63,7 +63,7 @@
             <div class="text-h6 q-mb-md">Detalhes</div>
 
             <div class="row q-col-gutter-md q-mb-md">
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-2">
                 <q-input
                   v-model.number="form.price"
                   label="Preço"
@@ -74,8 +74,19 @@
                   :rules="[(val) => val > 0 || 'Preço obrigatório']"
                 />
               </div>
-
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-2">
+                <q-select
+                  v-model="form.transaction_type"
+                  :options="transactionTypeOptions"
+                  label="Tipo de Negociação"
+                  outlined
+                  dense
+                  emit-value
+                  map-options
+                  :rules="[(val) => !!val || 'Tipo de negociação é obrigatório']"
+                />
+              </div>
+              <div class="col-12 col-md-2">
                 <q-input
                   v-model.number="form.area"
                   label="Área (m²)"
@@ -84,10 +95,8 @@
                   dense
                 />
               </div>
-            </div>
 
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-4">
+              <div class="col-12 col-md-2">
                 <q-input
                   v-model.number="form.bedrooms"
                   label="Quartos"
@@ -97,7 +106,7 @@
                 />
               </div>
 
-              <div class="col-12 col-md-4">
+              <div class="col-12 col-md-2">
                 <q-input
                   v-model.number="form.bathrooms"
                   label="Banheiros"
@@ -107,7 +116,7 @@
                 />
               </div>
 
-              <div class="col-12 col-md-4">
+              <div class="col-12 col-md-2">
                 <q-input
                   v-model.number="form.garages"
                   label="Vagas de garagem"
@@ -125,61 +134,49 @@
           <q-card-section>
             <div class="text-h6 q-mb-md">Localização</div>
 
-            <q-input
-              v-model="form.address"
-              label="Endereço"
-              outlined
-              dense
-              :rules="[(val) => !!val || 'Endereço obrigatório']"
-              class="q-mb-md"
-            />
-
-            <div class="row q-col-gutter-md q-mb-md">
-              <div class="col-12 col-md-6">
+            <div class="row q-col-gutter-md">
+              <div class="col-12 col-md-4">
                 <q-input
-                  v-model="form.city"
-                  label="Cidade"
+                  v-model="form.zip_code"
+                  label="CEP"
                   outlined
                   dense
-                  :rules="[(val) => !!val || 'Cidade obrigatória']"
+                  mask="#####-###"
+                  :rules="[(val) => !!val || 'CEP obrigatório']"
+                  @blur="onCepBlur"
+                  :loading="loadingCep"
                 />
               </div>
 
-              <div class="col-12 col-md-3">
+              <div class="col-12 col-md-8">
                 <q-input
-                  v-model="form.state"
-                  label="Estado"
+                  v-model="form.address"
+                  label="Endereço (logradouro)"
                   outlined
                   dense
-                  maxlength="2"
-                  :rules="[(val) => !!val || 'Estado obrigatório']"
+                  :rules="[(val) => !!val || 'Endereço obrigatório']"
                 />
-              </div>
-
-              <div class="col-12 col-md-3">
-                <q-input v-model="form.zip_code" label="CEP" mask="#####-###" outlined dense />
               </div>
             </div>
 
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-6">
-                <q-input
-                  v-model.number="form.latitude"
-                  label="Latitude"
-                  type="number"
-                  outlined
-                  dense
-                />
+            <div class="row q-col-gutter-md q-mt-sm">
+              <div class="col-12 col-md-4">
+                <q-input v-model="form.neighborhood" label="Bairro" outlined dense />
               </div>
+              <div class="col-12 col-md-4">
+                <q-input v-model="form.city" label="Cidade" outlined dense />
+              </div>
+              <div class="col-12 col-md-4">
+                <q-input v-model="form.state" label="Estado" outlined dense />
+              </div>
+            </div>
 
+            <div class="row q-col-gutter-md q-mt-sm">
               <div class="col-12 col-md-6">
-                <q-input
-                  v-model.number="form.longitude"
-                  label="Longitude"
-                  type="number"
-                  outlined
-                  dense
-                />
+                <q-input v-model="form.latitude" label="Latitude" outlined dense />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input v-model="form.longitude" label="Longitude" outlined dense />
               </div>
             </div>
           </q-card-section>
@@ -290,12 +287,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useQuasar } from 'quasar';
 import type { PropertyImage } from 'src/services/property.service';
-import { propertyService, Property } from 'src/services/property.service';
+import { propertyService } from 'src/services/property.service';
 
+const loadingCep = ref(false);
 const router = useRouter();
 const route = useRoute();
 const $q = useQuasar();
@@ -311,12 +309,14 @@ const form = ref({
   description: '',
   type: null as string | null,
   status: 'DISPONIVEL' as string,
+  transaction_type: 'VENDA' as string | null,
   price: 0,
   area: null as number | null,
   bedrooms: null as number | null,
   bathrooms: null as number | null,
   garages: null as number | null,
   address: '',
+  neighborhood: '',
   city: '',
   state: '',
   zip_code: '',
@@ -339,6 +339,94 @@ const propertyStatuses = [
   { label: 'Vendido', value: 'VENDIDO' },
   { label: 'Alugado', value: 'ALUGADO' },
 ];
+
+const transactionTypeOptions = [
+  { label: 'Venda', value: 'VENDA' },
+  { label: 'Aluguel', value: 'ALUGUEL' },
+  { label: 'Troca', value: 'TROCA' },
+  { label: 'A Combinar', value: 'A COMBINAR' },
+];
+
+// (Opcional) Computed para mudar o label do preço dinamicamente
+const priceLabel = computed(() => {
+  switch (form.value.transaction_type) {
+    case 'ALUGUEL':
+      return 'Valor do Aluguel';
+    case 'VENDA':
+      return 'Valor de Venda';
+    case 'TROCA':
+      return 'Valor de Referência (Troca)';
+    default:
+      return 'Preço';
+  }
+});
+
+const onCepBlur = async () => {
+  const raw = form.value.zip_code?.replace(/\D/g, '');
+  if (!raw || raw.length !== 8) {
+    return;
+  }
+  loadingCep.value = true;
+  try {
+    const response = await fetch(`https://viacep.com.br/ws/${raw}/json/`);
+    const data = await response.json();
+
+    if (data.erro) {
+      $q.notify({
+        type: 'warning',
+        message: 'CEP não encontrado.',
+      });
+      return;
+    }
+
+    form.value.address = data.logradouro || '';
+    form.value.neighborhood = data.bairro || '';
+    form.value.city = data.localidade || '';
+    form.value.state = data.uf || '';
+
+    // depois vamos complementar com latitude/longitude
+    await fetchLatLongFromAddress();
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: `Erro ao buscar CEP: ${error} `,
+    });
+  } finally {
+    loadingCep.value = false;
+  }
+};
+
+const fetchLatLongFromAddress = async () => {
+  const { address, city, state } = form.value;
+  const query = [address, city, state, 'Brasil'].filter(Boolean).join(', ');
+
+  if (!query) return;
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+      query,
+    )}`;
+
+    const resp = await fetch(url, {
+      headers: {
+        'Accept-Language': 'pt-BR',
+        'User-Agent': 'ImobiPro/1.0 (seu-email@dominio.com)',
+      },
+    });
+
+    const results = await resp.json();
+
+    if (Array.isArray(results) && results.length > 0) {
+      form.value.latitude = results[0].lat;
+      form.value.longitude = results[0].lon;
+    } else {
+      // não achou – opcional mostrar aviso
+      // Notify.create({ type: 'warning', message: 'Não foi possível localizar o endereço no mapa.' });
+    }
+  } catch (error) {
+    console.error('Erro ao buscar lat/long:', error);
+  }
+};
 
 const loadProperty = async () => {
   const id = route.params.id as string;

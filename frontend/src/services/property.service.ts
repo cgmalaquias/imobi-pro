@@ -6,6 +6,7 @@ export interface Property {
   description: string;
   type: 'CASA' | 'APARTAMENTO' | 'COMERCIAL' | 'TERRENO' | 'FAZENDA';
   status: 'DISPONIVEL' | 'VENDIDO' | 'ALUGADO';
+  transaction_type: 'VENDA' | 'ALUGUEL' | 'TROCA' | 'A COMBINAR';
   price: number;
   area?: number;
   bedrooms?: number;

@@ -94,24 +94,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/properties/PropertyFormPage.vue'),
         meta: { title: 'Editar Imóvel', requiresAuth: true, roles: ['ADMIN'] },
       },
-      {
-        path: 'clients',
-        name: 'clients',
-        component: () => import('pages/clients/ClientListPage.vue'),
-        meta: { title: 'Clientes' }
-      },
-      {
-        path: 'clients/create',
-        name: 'client-create',
-        component: () => import('pages/clients/ClientFormPage.vue'),
-        meta: { title: 'Cadastrar Cliente' }
-      },
-      {
-        path: 'clients/:id',
-        name: 'client-detail',
-        component: () => import('pages/clients/ClientDetailPage.vue'),
-        meta: { title: 'Detalhes do Cliente' }
-      },
+      // {
+      //   path: 'clients',
+      //   name: 'clients',
+      //   component: () => import('pages/clients/ClientListPage.vue'),
+      //   meta: { title: 'Clientes' }
+      // },
+      // {
+      //   path: 'clients/create',
+      //   name: 'client-create',
+      //   component: () => import('pages/clients/ClientFormPage.vue'),
+      //   meta: { title: 'Cadastrar Cliente' }
+      // },
+      // {
+      //   path: 'clients/:id',
+      //   name: 'client-detail',
+      //   component: () => import('pages/clients/ClientDetailPage.vue'),
+      //   meta: { title: 'Detalhes do Cliente' }
+      // },
       {
         path: 'leads',
         name: 'leads',

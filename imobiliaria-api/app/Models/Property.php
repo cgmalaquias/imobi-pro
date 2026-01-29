@@ -25,6 +25,7 @@ class Property extends Model
     protected $fillable = [
         'title',
         'description',
+        'transaction_type',
         'type',
         'status',
         'price',
@@ -84,5 +85,9 @@ class Property extends Model
             self::STATUS_VENDIDO,
             self::STATUS_ALUGADO,
         ];
+    }
+    public function getTransactionTypeAttribute($value): string
+    {
+        return strtoupper($value);
     }
 }

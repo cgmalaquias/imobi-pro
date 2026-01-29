@@ -8,12 +8,14 @@ use App\Models\PropertyImage;
 use App\Models\PropertyFeature;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator; // Para validação manual, se necessário
+use Illuminate\Support\Facades\Auth; // Para acessar o usuário autenticado
 
 class PropertyController extends Controller
 {
     public function __construct()
     {
-        // $this->middleware('auth:api')->except(['index', 'show']);
+        // $this->middleware('auth:jwt')->except(['index', 'show']);
         // $this->middleware('admin')->only(['store', 'update', 'destroy']);
     }
 
@@ -69,6 +71,7 @@ class PropertyController extends Controller
             'description' => 'required|string',
             'type' => 'required|in:CASA,APARTAMENTO,COMERCIAL,TERRENO,CHACARA',
             'status' => 'required|in:DISPONIVEL,VENDIDO,ALUGADO',
+            'transaction_type' => 'required|in:VENDA,ALUGUEL,TROCA,A COMBINAR',
             'price' => 'required|numeric|min:0',
             'area' => 'nullable|numeric|min:0',
             'bedrooms' => 'nullable|integer|min:0',

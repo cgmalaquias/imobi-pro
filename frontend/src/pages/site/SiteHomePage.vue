@@ -363,7 +363,7 @@ onMounted(async () => {
 .home-hero {
   position: relative;
   height: 360px;
-  background-image: url('/images/banner-corretora.jpg'); /* ajuste para sua imagem */
+  background-image: url('../../assets/images/banner-corretora.jpg'); /* ajuste para sua imagem */
   background-size: cover;
   background-position: center;
 }

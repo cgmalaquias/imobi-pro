@@ -11,8 +11,6 @@
  * Boot files are your "main.js"
  **/
 
-import { LoadingBar } from 'quasar'
-
 
 
 import App from 'app/src/App.vue'
@@ -93,13 +91,9 @@ export function addPreFetchHooks ({ router, store, publicPath }) {
     }
     const proceed = () => {
       
-      LoadingBar.stop()
-      
       if (hasRedirected === false) { next() }
     }
 
-    
-    LoadingBar.start()
     
 
     preFetchList.reduce(

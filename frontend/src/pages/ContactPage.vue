@@ -8,37 +8,25 @@
         <!-- Formulário de Contato -->
         <div class="contact-form">
           <h2>Formulário de Contato</h2>
-          <form @submit.prevent="submitForm">
+          <form>
             <div class="form-group">
               <label for="name">Nome Completo *</label>
-              <input
-                v-model="form.name"
-                type="text"
-                id="name"
-                placeholder="Seu nome completo"
-                required
-              />
+              <input type="text" id="name" placeholder="Seu nome completo" required />
             </div>
 
             <div class="form-group">
               <label for="email">Email *</label>
-              <input
-                v-model="form.email"
-                type="email"
-                id="email"
-                placeholder="seu@email.com"
-                required
-              />
+              <input type="email" id="email" placeholder="seu@email.com" required />
             </div>
 
             <div class="form-group">
               <label for="phone">Telefone</label>
-              <input v-model="form.phone" type="tel" id="phone" placeholder="(11) 99999-9999" />
+              <input type="tel" id="phone" placeholder="(11) 99999-9999" />
             </div>
 
             <div class="form-group">
               <label for="subject">Assunto *</label>
-              <select v-model="form.subject" id="subject" required>
+              <select id="subject" required>
                 <option value="">Selecione um assunto</option>
                 <option value="duvida">Dúvida</option>
                 <option value="sugestao">Sugestão</option>
@@ -50,7 +38,6 @@
             <div class="form-group">
               <label for="message">Mensagem *</label>
               <textarea
-                v-model="form.message"
                 id="message"
                 placeholder="Escreva sua mensagem aqui..."
                 rows="6"
@@ -59,19 +46,12 @@
             </div>
 
             <div class="form-group checkbox">
-              <input v-model="form.newsletter" type="checkbox" id="newsletter" />
+              <input type="checkbox" id="newsletter" />
               <label for="newsletter"> Desejo receber notícias e atualizações por email </label>
             </div>
 
             <button type="submit" class="btn-submit">Enviar Mensagem</button>
           </form>
-
-          <div v-if="successMessage" class="alert alert-success">
-            {{ successMessage }}
-          </div>
-          <div v-if="errorMessage" class="alert alert-error">
-            {{ errorMessage }}
-          </div>
         </div>
 
         <!-- Informações de Contato -->
@@ -127,108 +107,15 @@
       <!-- Mensagens Recentes -->
       <div class="messages-section">
         <h2>Minhas Mensagens</h2>
-        <div v-if="messages.length === 0" class="no-messages">
+        <div class="no-messages">
           <p>Nenhuma mensagem enviada ainda.</p>
-        </div>
-        <div v-else class="messages-list">
-          <div v-for="msg in messages" :key="msg.id" class="message-card">
-            <div class="message-header">
-              <h4>{{ msg.subject }}</h4>
-              <span class="message-date">{{ formatDate(msg.createdAt) }}</span>
-            </div>
-            <p class="message-content">{{ msg.message }}</p>
-            <div class="message-status">
-              <span :class="['status', msg.status]">
-                {{ msg.status === 'responded' ? 'Respondido' : 'Pendente' }}
-              </span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-export default {
-  name: 'ContactPage',
-  data() {
-    return {
-      form: {
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: '',
-        newsletter: false,
-      },
-      messages: [
-        // Exemplo de mensagem
-        // {
-        //   id: 1,
-        //   subject: 'Dúvida sobre propriedade',
-        //   message: 'Tenho dúvidas sobre a propriedade X',
-        //   createdAt: new Date(),
-        //   status: 'responded'
-        // }
-      ],
-      successMessage: '',
-      errorMessage: '',
-    };
-  },
-  methods: {
-    submitForm() {
-      // Validação básica
-      if (!this.form.name || !this.form.email || !this.form.subject || !this.form.message) {
-        this.errorMessage = 'Por favor, preencha todos os campos obrigatórios.';
-        return;
-      }
-
-      // Simular envio da mensagem
-      try {
-        const newMessage = {
-          id: this.messages.length + 1,
-          ...this.form,
-          createdAt: new Date(),
-          status: 'pending',
-        };
-
-        this.messages.unshift(newMessage);
-        this.successMessage = 'Mensagem enviada com sucesso! Entraremos em contato em breve.';
-
-        // Limpar formulário
-        this.resetForm();
-
-        // Limpar mensagem de sucesso após 5 segundos
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 5000);
-      } catch (error) {
-        this.errorMessage = 'Erro ao enviar mensagem. Tente novamente.';
-      }
-    },
-    resetForm() {
-      this.form = {
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: '',
-        newsletter: false,
-      };
-    },
-    formatDate(date) {
-      return new Date(date).toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    },
-  },
-};
-</script>
+<script setup lang="ts"></script>
 
 <style scoped>
 .contact-page {

@@ -32,7 +32,7 @@
             />
 
             <div class="row q-col-gutter-md q-mb-md">
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-4">
                 <q-select
                   v-model="form.type"
                   :options="propertyTypes"
@@ -43,7 +43,20 @@
                 />
               </div>
 
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-4">
+                <q-select
+                  v-model="form.transaction_type"
+                  :options="transactionTypeOptions"
+                  label="Tipo de Negociação"
+                  outlined
+                  dense
+                  emit-value
+                  map-options
+                  :rules="[(val) => !!val || 'Tipo de negociação é obrigatório']"
+                />
+              </div>
+
+              <div class="col-12 col-md-4">
                 <q-select
                   v-model="form.status"
                   :options="propertyStatuses"
@@ -63,7 +76,7 @@
             <div class="text-h6 q-mb-md">Detalhes</div>
 
             <div class="row q-col-gutter-md q-mb-md">
-              <div class="col-12 col-md-2">
+              <div class="col-12 col-md-3">
                 <q-input
                   v-model.number="form.price"
                   label="Preço"
@@ -74,19 +87,8 @@
                   :rules="[(val) => val > 0 || 'Preço obrigatório']"
                 />
               </div>
-              <div class="col-12 col-md-2">
-                <q-select
-                  v-model="form.transaction_type"
-                  :options="transactionTypeOptions"
-                  label="Tipo de Negociação"
-                  outlined
-                  dense
-                  emit-value
-                  map-options
-                  :rules="[(val) => !!val || 'Tipo de negociação é obrigatório']"
-                />
-              </div>
-              <div class="col-12 col-md-2">
+
+              <div class="col-12 col-md-3">
                 <q-input
                   v-model.number="form.area"
                   label="Área (m²)"
@@ -150,33 +152,86 @@
 
               <div class="col-12 col-md-8">
                 <q-input
+                  v-if="!loadingCep"
                   v-model="form.address"
                   label="Endereço (logradouro)"
                   outlined
                   dense
                   :rules="[(val) => !!val || 'Endereço obrigatório']"
                 />
+                <template v-else>
+                  <q-skeleton type="QInput" height="40px" />
+                </template>
               </div>
             </div>
 
             <div class="row q-col-gutter-md q-mt-sm">
               <div class="col-12 col-md-4">
-                <q-input v-model="form.neighborhood" label="Bairro" outlined dense />
+                <q-input
+                  v-if="!loadingCep"
+                  v-model="form.neighborhood"
+                  label="Bairro"
+                  outlined
+                  dense
+                />
+
+                <template v-else>
+                  <q-skeleton type="QInput" height="40px" />
+                </template>
               </div>
               <div class="col-12 col-md-4">
-                <q-input v-model="form.city" label="Cidade" outlined dense />
+                <q-input v-if="!loadingCep" v-model="form.city" label="Cidade" outlined dense />
+
+                <template v-else>
+                  <q-skeleton type="QInput" height="40px" />
+                </template>
               </div>
               <div class="col-12 col-md-4">
-                <q-input v-model="form.state" label="Estado" outlined dense />
+                <q-select
+                  v-if="!loadingCep"
+                  v-model="form.state"
+                  :options="brazilianStates"
+                  label="Estado (UF)"
+                  outlined
+                  dense
+                  emit-value
+                  map-options
+                  clearable
+                  :rules="[(val) => !!val || 'Estado obrigatório']"
+                />
+
+                <template v-else>
+                  <q-skeleton type="QInput" height="40px" />
+                </template>
               </div>
             </div>
 
             <div class="row q-col-gutter-md q-mt-sm">
               <div class="col-12 col-md-6">
-                <q-input v-model="form.latitude" label="Latitude" outlined dense />
+                <q-input
+                  v-if="!loadingCep"
+                  v-model="form.latitude"
+                  label="Latitude"
+                  outlined
+                  dense
+                />
+
+                <template v-else>
+                  <q-skeleton type="QInput" height="40px" />
+                </template>
               </div>
               <div class="col-12 col-md-6">
-                <q-input v-model="form.longitude" label="Longitude" outlined dense />
+                <q-input
+                  v-if="!loadingCep"
+                  v-model="form.longitude"
+                  label="Longitude"
+                  outlined
+                  dense
+                />
+
+                <template v-else>
+                  <q-skeleton type="QInput" height="40px" />
+                </template>
               </div>
             </div>
           </q-card-section>
@@ -307,9 +362,9 @@ const newFeature = ref('');
 const form = ref({
   title: '',
   description: '',
-  type: null as string | null,
+  type: 'CASA' as string,
   status: 'DISPONIVEL' as string,
-  transaction_type: 'VENDA' as string | null,
+  transaction_type: 'VENDA' as string,
   price: 0,
   area: null as number | null,
   bedrooms: null as number | null,
@@ -345,6 +400,36 @@ const transactionTypeOptions = [
   { label: 'Aluguel', value: 'ALUGUEL' },
   { label: 'Troca', value: 'TROCA' },
   { label: 'A Combinar', value: 'A COMBINAR' },
+];
+
+const brazilianStates = [
+  { label: 'AC', value: 'AC' },
+  { label: 'AL', value: 'AL' },
+  { label: 'AP', value: 'AP' },
+  { label: 'AM', value: 'AM' },
+  { label: 'BA', value: 'BA' },
+  { label: 'CE', value: 'CE' },
+  { label: 'DF', value: 'DF' },
+  { label: 'ES', value: 'ES' },
+  { label: 'GO', value: 'GO' },
+  { label: 'MA', value: 'MA' },
+  { label: 'MT', value: 'MT' },
+  { label: 'MS', value: 'MS' },
+  { label: 'MG', value: 'MG' },
+  { label: 'PA', value: 'PA' },
+  { label: 'PB', value: 'PB' },
+  { label: 'PR', value: 'PR' },
+  { label: 'PE', value: 'PE' },
+  { label: 'PI', value: 'PI' },
+  { label: 'RJ', value: 'RJ' },
+  { label: 'RN', value: 'RN' },
+  { label: 'RS', value: 'RS' },
+  { label: 'RO', value: 'RO' },
+  { label: 'RR', value: 'RR' },
+  { label: 'SC', value: 'SC' },
+  { label: 'SP', value: 'SP' },
+  { label: 'SE', value: 'SE' },
+  { label: 'TO', value: 'TO' },
 ];
 
 // (Opcional) Computed para mudar o label do preço dinamicamente
@@ -443,6 +528,7 @@ const loadProperty = async () => {
       title: property.title,
       description: property.description,
       type: property.type,
+      transaction_type: property.transaction_type,
       status: property.status,
       price: property.price,
       area: property.area || null,
@@ -450,6 +536,7 @@ const loadProperty = async () => {
       bathrooms: property.bathrooms || null,
       garages: property.garages || null,
       address: property.address,
+      neighborhood: property.neighborhood || '',
       city: property.city,
       state: property.state,
       zip_code: property.zip_code || '',
@@ -506,12 +593,13 @@ const handleSubmit = async () => {
     formData.append('title', form.value.title);
     formData.append('description', form.value.description);
     formData.append('type', form.value.type);
+    formData.append('transaction_type', form.value.transaction_type);
     formData.append('status', form.value.status);
     formData.append('price', String(form.value.price));
     formData.append('address', form.value.address);
+    formData.append('neighborhood', form.value.neighborhood);
     formData.append('city', form.value.city);
     formData.append('state', form.value.state);
-
     // Campos opcionais
     if (form.value.area) formData.append('area', String(form.value.area));
     if (form.value.bedrooms) formData.append('bedrooms', String(form.value.bedrooms));

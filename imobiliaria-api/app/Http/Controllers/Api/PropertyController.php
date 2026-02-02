@@ -69,24 +69,28 @@ class PropertyController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'type' => 'required|in:CASA,APARTAMENTO,COMERCIAL,TERRENO,CHACARA',
-            'status' => 'required|in:DISPONIVEL,VENDIDO,ALUGADO',
-            'transaction_type' => 'required|in:VENDA,ALUGUEL,TROCA,A COMBINAR',
+            // CORREÇÃO 1: 'type' - Verifique os valores exatos que você está enviando do frontend
+            'type' => 'required|string|in:CASA,APARTAMENTO,COMERCIAL,TERRENO,FAZENDA',
+            'status' => 'required|string|in:DISPONIVEL,VENDIDO,ALUGADO',
+            // CORREÇÃO 2: 'transaction_type' - Adicionado 'required' e os valores corretos
+            'transaction_type' => 'required|string|in:VENDA,ALUGUEL,TROCA,A COMBINAR',
             'price' => 'required|numeric|min:0',
             'area' => 'nullable|numeric|min:0',
             'bedrooms' => 'nullable|integer|min:0',
             'bathrooms' => 'nullable|integer|min:0',
             'garages' => 'nullable|integer|min:0',
-            'address' => 'required|string',
-            'city' => 'required|string',
-            'state' => 'required|string',
-            'zip_code' => 'nullable|string',
+            'address' => 'required|string|max:255',
+            'neighborhood' => 'nullable|string|max:255',
+            'city' => 'required|string|max:255',
+            'state' => 'required|string|max:2', // UF tem 2 caracteres
+            'zip_code' => 'nullable|string|max:9', // Ex: 81940-110
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'images' => 'nullable|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
+            // CORREÇÃO 3: 'images.*' - Regra para múltiplos arquivos de imagem
+            'images' => 'nullable|array', // O array de imagens pode ser nulo
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120', // Cada item do array deve ser uma imagem (max 5MB)
             'features' => 'nullable|array',
-            'features.*' => 'string',
+            'features.*' => 'string|max:255',
         ]);
 
         $property = Property::create($validated);
@@ -122,25 +126,27 @@ class PropertyController extends Controller
     public function update(Request $request, Property $property)
     {
         $validated = $request->validate([
-            'title' => 'string|max:255',
-            'description' => 'string',
-            'type' => 'in:CASA,APARTAMENTO,COMERCIAL,TERRENO,CHACARA',
-            'status' => 'in:DISPONIVEL,VENDIDO,ALUGADO',
-            'price' => 'numeric|min:0',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'type' => 'required|string|in:CASA,APARTAMENTO,COMERCIAL,TERRENO,FAZENDA',
+            'status' => 'required|string|in:DISPONIVEL,VENDIDO,ALUGADO',
+            'transaction_type' => 'required|string|in:VENDA,ALUGUEL,TROCA,A COMBINAR',
+            'price' => 'required|numeric|min:0',
             'area' => 'nullable|numeric|min:0',
             'bedrooms' => 'nullable|integer|min:0',
             'bathrooms' => 'nullable|integer|min:0',
             'garages' => 'nullable|integer|min:0',
-            'address' => 'string',
-            'city' => 'string',
-            'state' => 'string',
-            'zip_code' => 'nullable|string',
+            'address' => 'required|string|max:255',
+            'neighborhood' => 'nullable|string|max:255',
+            'city' => 'required|string|max:255',
+            'state' => 'required|string|max:2',
+            'zip_code' => 'nullable|string|max:9',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'images' => 'nullable|array',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120',
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'features' => 'nullable|array',
-            'features.*' => 'string',
+            'features.*' => 'string|max:255',
         ]);
 
         $property->update($validated);

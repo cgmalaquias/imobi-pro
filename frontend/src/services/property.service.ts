@@ -1,6 +1,7 @@
 import { api } from 'src/boot/api';
 
 export interface Property {
+  neighborhood: string;
   id: string;
   title: string;
   description: string;

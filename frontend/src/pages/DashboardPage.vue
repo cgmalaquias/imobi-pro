@@ -235,15 +235,19 @@ const loadDashboard = async () => {
     // Visitas de hoje
     const today = new Date().toISOString().split('T')[0];
     const todayVisitsResponse = await api.get(`/visits`);
-    const todayVisitsFiltered = todayVisitsResponse.data.filter((visit: Visit) => {
-      return visit.date === today;
-    });
+
+    const todayVisitsFiltered =
+      todayVisitsResponse.length > 0
+        ? todayVisitsResponse.data.filter((visit: Visit) => {
+            return visit.date === today;
+          })
+        : [];
     stats.value.todayVisits = todayVisitsFiltered.length;
 
     // Últimas 5 visitas
-    recentVisits.value = visitsResponse.data.slice(0, 5);
+    recentVisits.value = visitsResponse.length > 0 ? visitsResponse.data.slice(0, 5) : [];
   } catch (error) {
-    console.error('Erro ao carregar dashboard:', error);
+    console.log('Erro ao carregar dashboard:', error);
   } finally {
     loading.value = false;
   }

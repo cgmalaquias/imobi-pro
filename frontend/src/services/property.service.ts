@@ -42,9 +42,9 @@ export interface PropertyFeature {
 export interface Visit {
   id: string;
   property_id: string;
-  name: string;
-  email: string;
-  phone: string;
+  client_name: string;
+  client_email: string;
+  client_phone: string;
   date: string;
   time: string;
   message?: string;

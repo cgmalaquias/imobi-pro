@@ -97,12 +97,18 @@
 
               <div class="row q-col-gutter-md">
                 <div class="col-12 col-md-3">
-                  <q-img
+                  <img
                     v-if="visit.property.images?.[0]"
                     :src="visit.property.images[0].url"
                     ratio="1"
                     class="rounded-borders"
                   />
+                  <!-- <q-img
+                    v-if="visit.property.images?.[0]"
+                    :src="visit.property.images[0].url"
+                    ratio="1"
+                    class="rounded-borders"
+                  /> -->
                 </div>
 
                 <div class="col-12 col-md-9">
@@ -179,7 +185,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { api } from 'src/boot/api';
-import { Visit } from 'src/services/visit.service';
+import type { Visit } from 'src/services/visit.service';
 import { visitService } from 'src/services/visit.service';
 
 const route = useRoute();

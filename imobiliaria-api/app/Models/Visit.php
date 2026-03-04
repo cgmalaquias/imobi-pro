@@ -19,13 +19,14 @@ class Visit extends Model
 
     protected $fillable = [
         'property_id',
-        'name',
-        'email',
-        'phone',
-        'date',
-        'time',
+        'client_name',
+        'client_email',
+        'client_phone',
+        'preferred_date',
+        'preferred_time',
         'message',
         'status',
+        'internal_notes',
     ];
 
     protected $casts = [

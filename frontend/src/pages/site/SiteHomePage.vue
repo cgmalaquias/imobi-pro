@@ -85,7 +85,7 @@
                 label="Buscar"
                 icon="search"
                 class="full-width"
-                @click="goToPropertyList"
+                @click="goToPropertyList()"
               />
             </div>
           </div>
@@ -95,7 +95,7 @@
               dense
               label="Aplicar filtros avançados"
               color="primary"
-              @click="goToPropertyList"
+              @click="goToPropertyList()"
             />
           </div>
         </q-card>
@@ -200,31 +200,30 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-// CORREÇÃO AQUI: Importar do property.service.ts
 import type {
   Property,
-  PropertyType,
-  TransactionType,
+  // PropertyType,
+  // TransactionType,
   PropertyFilters,
 } from 'src/services/property.service';
-import { propertyService } from 'src/services/property.service'; // CORREÇÃO AQUI: Importar o serviço
+import { propertyService } from 'src/services/property.service';
 import PropertyCard from 'src/components/PropertyCard.vue';
 
 const router = useRouter();
 
-// CORREÇÃO AQUI: Removido usePropertyStore()
-// const propertyStore = usePropertyStore();
+// Variável de ambiente para a URL base das imagens
+const imageBaseUrl = import.meta.env.VITE_APP_IMAGE_URL;
 
 // Definindo os filtros para a busca principal
 const filters = ref<PropertyFilters & { transactionType?: TransactionType; search?: string }>({
   page: 1,
-  limit: 12, // Ajuste o limite conforme a necessidade para a busca principal
+  limit: 12,
   type: undefined,
   city: undefined,
-  status: 'DISPONIVEL', // Ou 'TODOS' se você quiser mostrar vendidos/alugados também
+  status: 'DISPONIVEL',
   featured: undefined,
-  transactionType: undefined, // Adicionado para o filtro do banner
-  search: undefined, // Adicionado para o filtro do banner
+  transactionType: undefined,
+  search: undefined,
 });
 
 // Opções para os selects
@@ -233,7 +232,7 @@ const propertyTypesOptions: Array<{ label: string; value: PropertyType }> = [
   { label: 'Apartamento', value: 'APARTAMENTO' },
   { label: 'Terreno', value: 'TERRENO' },
   { label: 'Comercial', value: 'COMERCIAL' },
-  { label: 'Rural', value: 'FAZENDA' }, // Ajustado para FAZENDA, se for o caso no backend
+  { label: 'Rural', value: 'FAZENDA' },
 ];
 
 const transactionTypesOptions: Array<{ label: string; value: TransactionType }> = [
@@ -275,9 +274,16 @@ const loadRent = async (): Promise<void> => {
       page: 1,
       limit: 8,
       status: 'DISPONIVEL',
-      transactionType: 'ALUGUEL', // Filtrar por ALUGUEL
+      transactionType: 'ALUGUEL',
     });
-    rentProperties.value = response.data;
+    // Mapeia as imagens para construir a URL completa
+    rentProperties.value = response.data.map((property: Property) => ({
+      ...property,
+      images: (property.images || []).map((img: any) => ({
+        ...img,
+        url: `${imageBaseUrl}${img.path || img.url}`,
+      })),
+    }));
   } catch (error: unknown) {
     console.error('Erro ao carregar imóveis para alugar:', getErrorMessage(error));
   } finally {
@@ -292,9 +298,16 @@ const loadSale = async (): Promise<void> => {
       page: 1,
       limit: 8,
       status: 'DISPONIVEL',
-      transactionType: 'VENDA', // Filtrar por VENDA
+      transactionType: 'VENDA',
     });
-    saleProperties.value = response.data;
+    // Mapeia as imagens para construir a URL completa
+    saleProperties.value = response.data.map((property: Property) => ({
+      ...property,
+      images: (property.images || []).map((img: any) => ({
+        ...img,
+        url: `${imageBaseUrl}${img.path || img.url}`,
+      })),
+    }));
   } catch (error: unknown) {
     console.error('Erro ao carregar imóveis para venda:', getErrorMessage(error));
   } finally {
@@ -309,9 +322,16 @@ const loadFeatured = async (): Promise<void> => {
       page: 1,
       limit: 8,
       status: 'DISPONIVEL',
-      featured: true, // Filtrar por destaque
+      featured: true,
     });
-    featuredProperties.value = response.data;
+    // Mapeia as imagens para construir a URL completa
+    featuredProperties.value = response.data.map((property: Property) => ({
+      ...property,
+      images: (property.images || []).map((img: any) => ({
+        ...img,
+        url: `${imageBaseUrl}${img.path || img.url}`,
+      })),
+    }));
   } catch (error: unknown) {
     console.error('Erro ao carregar imóveis em destaque:', getErrorMessage(error));
   } finally {

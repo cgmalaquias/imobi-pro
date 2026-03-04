@@ -77,14 +77,13 @@
     <div v-if="!loading && properties.length > 0" class="row q-col-gutter-md">
       <div v-for="property in properties" :key="property.id" class="col-12 col-sm-6 col-md-4">
         <q-card class="cursor-pointer property-card" @click="viewProperty(property.id)">
-          <q-img :src="property.images?.[0]?.url || '/placeholder.jpg'" ratio="16/9">
-            <div class="absolute-top-right q-pa-sm">
-              <q-badge
-                :color="getStatusColor(property.status)"
-                :label="getStatusLabel(property.status)"
-              />
-            </div>
-          </q-img>
+          <img :src="property.images?.[0]?.url || '/placeholder.jpg'" ratio="16/9" />
+          <div class="absolute-top-right q-pa-sm">
+            <q-badge
+              :color="getStatusColor(property.status)"
+              :label="getStatusLabel(property.status)"
+            />
+          </div>
 
           <q-card-section>
             <div class="text-h6 ellipsis-2-lines">{{ property.title }}</div>
@@ -157,6 +156,9 @@ import { propertyService } from 'src/services/property.service';
 
 const router = useRouter();
 
+// Variável de ambiente para a URL base das imagens (compatível com Vite)
+const imageBaseUrl = import.meta.env.VITE_APP_IMAGE_URL || '';
+
 const properties = ref<Property[]>([]);
 const loading = ref(false);
 const filters = ref<PropertyFilters>({
@@ -186,7 +188,15 @@ const loadProperties = async () => {
       page: pagination.value.current_page,
     });
 
-    properties.value = response.data;
+    // Mapeia as imagens para adicionar a URL base
+    properties.value = response.data.map((property: Property) => ({
+      ...property,
+      images: (property.images || []).map((img: any) => ({
+        ...img,
+        url: `${imageBaseUrl}${img.path || img.url}`, // Usa 'path' ou 'url' do backend
+      })),
+    }));
+
     pagination.value = {
       current_page: response.current_page,
       last_page: response.last_page,
@@ -200,8 +210,8 @@ const loadProperties = async () => {
   }
 };
 
-const viewProperty = (id: string) => {
-  router.push(`/imovel/${id}`);
+const viewProperty = async (id: string) => {
+  await router.push(`/imovel/${id}`);
 };
 
 const formatPrice = (price: number) => {

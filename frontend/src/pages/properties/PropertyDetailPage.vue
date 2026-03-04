@@ -44,7 +44,7 @@
               v-for="(image, index) in property.images"
               :key="index"
               :name="index"
-              :img-src="image.url"
+              :img-src="`${imagePath}${image.url}`"
             />
           </q-carousel>
 
@@ -106,10 +106,10 @@
 
             <q-card-section>
               <div class="text-caption text-grey-7">Criado em</div>
-              <div class="text-body2">{{ formatDate(property.created_at) }}</div>
+              <!-- <div class="text-body2">{{ formatDate(property.created_at) }}</div> -->
 
               <div class="text-caption text-grey-7 q-mt-sm">Atualizado em</div>
-              <div class="text-body2">{{ formatDate(property.updated_at) }}</div>
+              <!-- <div class="text-body2">{{ formatDate(property.updated_at) }}</div> -->
             </q-card-section>
           </q-card>
         </div>
@@ -174,13 +174,15 @@
               </q-item-section>
 
               <q-item-section>
-                <q-item-label>{{ visit.name }}</q-item-label>
-                <q-item-label caption>{{ visit.email }} | {{ visit.phone }}</q-item-label>
+                <q-item-label>{{ visit.client_name }}</q-item-label>
+                <q-item-label caption
+                  >{{ visit.client_email }} | {{ visit.client_phone }}</q-item-label
+                >
               </q-item-section>
 
               <q-item-section side>
                 <div class="text-grey-8 q-gutter-xs">
-                  <div>{{ formatDate(visit.date) }} às {{ visit.time }}</div>
+                  <!-- <div>{{ formatDate(visit.date) }} às {{ visit.time }}</div> -->
                   <q-badge
                     :color="getVisitStatusColor(visit.status)"
                     :label="getVisitStatusLabel(visit.status)"
@@ -223,7 +225,8 @@ import { propertyService } from 'src/services/property.service';
 const route = useRoute();
 const router = useRouter();
 const $q = useQuasar();
-
+// Variável de ambiente para a URL base das imagens (compatível com Vite)
+const imagePath = import.meta.env.VITE_APP_IMAGE_URL || '';
 const property = ref<Property | null>(null);
 const loading = ref(false);
 const currentImage = ref(0);
@@ -240,7 +243,7 @@ const loadProperty = async () => {
       message: error.message || 'Erro ao carregar imóvel',
     });
 
-    router.push('/admin/properties');
+    void router.push('/admin/properties');
   } finally {
     loading.value = false;
   }

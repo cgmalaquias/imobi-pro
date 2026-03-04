@@ -3,112 +3,122 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Visit; // Certifique-se de importar o modelo Visit
+use App\Models\Visit;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator; // Para validação manual, se necessário
-use Illuminate\Support\Facades\Auth; // Para acessar o usuário autenticado
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth; // Importar Auth para o middleware
 
 class VisitController extends Controller
 {
     public function __construct()
     {
-        // Aplica o middleware 'auth:jwt' a todas as ações deste controller,
+        // Aplica o middleware 'auth:api' a todas as ações deste controller,
         // exceto 'store' (que é pública para agendamento de cliente).
-        // $this->middleware('auth:jwt')->except(['store']); // <-- CORREÇÃO AQUI
+        // Se você estiver usando 'auth:jwt' no seu projeto, use 'auth:jwt' aqui.
+        $this->middleware('auth:api')->except(['store']);
     }
 
     /**
-     * Display a listing of the resource.
+     * Lista visitas (para o admin).
+     * Aceita filtros simples por status e busca pelo nome/email/telefone.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Apenas usuários autenticados podem ver a lista de visitas
-        // Você pode adicionar lógica de permissão aqui (ex: apenas ADMIN)
-        $visits = Visit::with(['property', 'user'])->get(); // Carrega visitas com dados do imóvel e usuário
+        // O usuário autenticado agora pode acessar esta rota
+        $query = Visit::with('property');
+
+        if ($status = $request->query('status')) {
+            $query->where('status', $status);
+        }
+
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        $perPage = (int) $request->query('per_page', 15);
+
+        $visits = $query->orderByDesc('date')
+            ->orderByDesc('time')
+            ->paginate($perPage);
+
         return response()->json($visits);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Cadastra uma nova visita (lead) – rota pública, chamada pelo site.
      */
     public function store(Request $request)
     {
-        // Esta rota é pública para clientes agendarem visitas
         $validator = Validator::make($request->all(), [
-            'property_id' => 'required|exists:properties,id',
-            'client_name' => 'required|string|max:255',
-            'client_email' => 'required|email|max:255',
-            'client_phone' => 'required|string|max:20',
-            'preferred_date' => 'required|date',
-            'preferred_time' => 'required|string|max:5', // Ex: "10:00"
-            'message' => 'nullable|string',
+            'property_id' => ['required', 'exists:properties,id'],
+            'name'        => ['required', 'string', 'max:255'],
+            'email'       => ['required', 'email', 'max:255'],
+            'phone'       => ['required', 'string', 'max:20'],
+            'date'        => ['required', 'date'],
+            'time'        => ['required', 'string', 'max:5'], // Ex: "14:30"
+            'message'     => ['nullable', 'string'],
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'Dados de agendamento inválidos.', 'errors' => $validator->errors()], 422);
         }
 
         $visit = Visit::create([
-            'property_id' => $request->property_id,
-            'user_id' => Auth::check() ? Auth::id() : null, // Se o cliente estiver logado, associa o ID
-            'client_name' => $request->client_name,
-            'client_email' => $request->client_email,
-            'client_phone' => $request->client_phone,
-            'preferred_date' => $request->preferred_date,
-            'preferred_time' => $request->preferred_time,
-            'status' => 'PENDENTE', // Status inicial da visita
-            'message' => $request->message,
+            'property_id'   => $request->property_id,
+            'client_name'   => $request->client_name,
+            'client_email'  => $request->client_email,
+            'client_phone'  => $request->client_phone,
+            'preferred_date' => $request->date,
+            'preferred_time' => $request->time,
+            'message'       => $request->message,
+            'status'        => 'PENDENTE', // Status inicial
         ]);
 
         return response()->json($visit, 201);
     }
 
     /**
-     * Display the specified resource.
+     * Exibe uma visita específica (para o admin).
      */
-    public function show(string $id)
+    public function show(Visit $visit)
     {
-        $visit = Visit::with(['property', 'user'])->findOrFail($id);
-        return response()->json($visit);
+        // O usuário autenticado agora pode acessar esta rota
+        return response()->json($visit->load('property'));
     }
 
     /**
-     * Update the specified resource in storage.
+     * Atualiza o status de uma visita (para o admin).
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Visit $visit)
     {
-        // Apenas usuários autenticados podem atualizar visitas
-        $visit = Visit::findOrFail($id);
-
+        // O usuário autenticado agora pode acessar esta rota
         $validator = Validator::make($request->all(), [
-            'property_id' => 'required|exists:properties,id',
-            'client_name' => 'required|string|max:255',
-            'client_email' => 'required|email|max:255',
-            'client_phone' => 'required|string|max:20',
-            'preferred_date' => 'required|date',
-            'preferred_time' => 'required|string|max:5',
-            'status' => 'required|in:PENDENTE,CONFIRMADA,CANCELADA,REALIZADA', // Status da visita
-            'message' => 'nullable|string',
+            'status' => ['required', 'string', 'in:PENDENTE,CONFIRMADA,CONCLUIDA,CANCELADA'],
+            // Se for adicionar user_id ou internal_notes no futuro, adicione validação aqui
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'Dados de atualização inválidos.', 'errors' => $validator->errors()], 422);
         }
 
-        $visit->update($request->all());
+        $visit->update([
+            'status' => $request->status,
+        ]);
 
         return response()->json($visit);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove uma visita (para o admin).
      */
-    public function destroy(string $id)
+    public function destroy(Visit $visit)
     {
-        // Apenas usuários autenticados podem deletar visitas
-        $visit = Visit::findOrFail($id);
+        // O usuário autenticado agora pode acessar esta rota
         $visit->delete();
-
-        return response()->json(['message' => 'Visit deleted successfully'], 204);
+        return response()->json(null, 204);
     }
 }

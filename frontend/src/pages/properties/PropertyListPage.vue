@@ -80,9 +80,9 @@
       >
         <template v-slot:body-cell-image="props">
           <q-td :props="props">
-            <q-img
+            <img
               v-if="props.row.images?.[0]"
-              :src="props.row.images[0].url"
+              :src="imageBaseUrl + props.row.images[0].url || props.row.images[0].url"
               style="height: 60px; width: 60px"
               class="rounded-borders"
             />
@@ -165,6 +165,7 @@ import { useQuasar } from 'quasar';
 import type { Property, PropertyFilters } from 'src/services/property.service';
 import { propertyService } from 'src/services/property.service';
 
+const imageBaseUrl = import.meta.env.VITE_APP_IMAGE_URL || '';
 const router = useRouter();
 const $q = useQuasar();
 
@@ -248,6 +249,7 @@ const loadProperties = async () => {
     });
 
     properties.value = response.data;
+    console.log('Imoveis', properties.value);
     pagination.value.rowsNumber = response.total;
   } catch (error: any) {
     $q.notify({
@@ -259,12 +261,12 @@ const loadProperties = async () => {
   }
 };
 
-const viewProperty = (id: string) => {
-  router.push(`/admin/properties/${id}`);
+const viewProperty = async (id: string) => {
+  await router.push(`/admin/properties/${id}`);
 };
 
-const editProperty = (id: string) => {
-  router.push(`/admin/properties/${id}/edit`);
+const editProperty = async (id: string) => {
+  await router.push(`/admin/properties/${id}/edit`);
 };
 
 const deleteProperty = (id: string) => {

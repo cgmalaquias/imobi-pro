@@ -27,6 +27,8 @@ return [
         'https://agenciareinodigital.com.br',
         'https://imobipro.agenciareinodigital.com.br',
         'https://www.agenciareinodigital.com.br',
+        'http://site.karinacarvalhoimoveis.com',
+        'https://site.karinacarvalhoimoveis.com',
     ],
 
     'allowed_origins_patterns' => [],

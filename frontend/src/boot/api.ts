@@ -3,8 +3,8 @@ import { LoadingBar } from 'quasar'; // Importar LoadingBar
 
 // URL base da API Laravel
 // VERIFIQUE SE ESTA URL ESTÁ CORRETA E SEMPRE ATUALIZADA
-// export const API_BASE_URL = 'https://imobiproapi.agenciareinodigital.com.br/api';
-export const API_BASE_URL = 'http://corretora-backend.ls/api';
+export const API_BASE_URL = 'https://imobiproapi.agenciareinodigital.com.br/api';
+// export const API_BASE_URL = 'http://corretora-backend.ls/api';
 
 // Helper para fazer requisições
 export const api = {

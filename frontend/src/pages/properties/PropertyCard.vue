@@ -1,13 +1,17 @@
 <template>
   <q-card class="property-card cursor-pointer" @click="goToDetails">
     <div class="property-image-container">
-      <q-img :src="coverImage" :ratio="16 / 9" spinner-color="primary" class="property-image">
-        <template v-slot:error>
+      <img
+        :src="`${imageBaseUrl}${coverImage}`"
+        :ratio="16 / 9"
+        spinner-color="primary"
+        class="property-image"
+      />
+      <!-- <template v-slot:error>
           <div class="absolute-full flex flex-center bg-grey-3">
             <q-icon name="home" size="64px" color="grey-5" />
           </div>
-        </template>
-      </q-img>
+        </template> -->
 
       <q-badge
         v-if="property.featured"
@@ -98,7 +102,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { Property, PropertyStatus } from '@types/index';
+import type { Property, PropertyStatus } from '../../types/index';
 
 interface Props {
   property: Property;
@@ -120,6 +124,8 @@ const coverImage = computed(() => {
   return cover?.url || props.property.images?.[0]?.url || '/placeholder-property.jpg';
 });
 
+const imageBaseUrl = import.meta.env.VITE_APP_IMAGE_URL || '';
+
 const getStatusColor = (status: PropertyStatus): string => {
   const colors: Record<PropertyStatus, string> = {
     disponivel: 'positive',
@@ -139,7 +145,7 @@ const formatCurrency = (value: number): string => {
 };
 
 const goToDetails = () => {
-  router.push(`/properties/${props.property.id}`);
+  void router.push(`/properties/${props.property.id}`);
 };
 
 const handleEdit = () => {

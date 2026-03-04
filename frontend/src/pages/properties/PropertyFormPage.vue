@@ -294,7 +294,7 @@
             <div v-if="form.images.length > 0" class="row q-col-gutter-sm">
               <div v-for="(image, index) in form.images" :key="index" class="col-6">
                 <div class="relative-position">
-                  <q-img :src="image.url" ratio="1" class="rounded-borders" />
+                  <img :src="image.url" ratio="1" class="rounded-borders" />
                   <q-btn
                     flat
                     dense
@@ -515,7 +515,6 @@ const fetchLatLongFromAddress = async () => {
 
 const loadProperty = async () => {
   const id = route.params.id as string;
-
   if (!id) return;
 
   isEdit.value = true;
@@ -542,7 +541,13 @@ const loadProperty = async () => {
       zip_code: property.zip_code || '',
       latitude: property.latitude || null,
       longitude: property.longitude || null,
-      images: property.images || [],
+      images: (property.images || []).map((img: any) => ({
+        id: img.id,
+        property_id: img.property_id,
+        // url: `${process.env.VITE_APP_IMAGE_URL}${img.path || img.url}`,
+        url: `${import.meta.env.VITE_APP_IMAGE_URL}${img.path || img.url}`,
+        order: img.order,
+      })),
       features: property.features?.map((f) => f.name) || [],
     };
   } catch (error: any) {
@@ -550,8 +555,7 @@ const loadProperty = async () => {
       type: 'negative',
       message: error.message || 'Erro ao carregar imóvel',
     });
-
-    router.push('/admin/properties');
+    await router.push('/admin/properties');
   } finally {
     loading.value = false;
   }

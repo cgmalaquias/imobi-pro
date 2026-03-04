@@ -1,10 +1,12 @@
 <template>
   <q-card class="property-card" @click="$emit('click')">
-    <q-img :src="mainImage" ratio="16/9">
+    <img :src="mainImage" ratio="16/9" />
+
+    <!-- <q-img :src="mainImage" ratio="16/9">
       <template #error>
         <div class="column flex flex-center bg-grey-3 text-grey-7">Sem imagem</div>
       </template>
-    </q-img>
+    </q-img> -->
 
     <q-card-section>
       <div class="text-subtitle1 text-weight-bold ellipsis-2-lines">
@@ -14,12 +16,14 @@
         {{ property.city }} - {{ property.state }}
       </div>
       <div class="text-body1 text-weight-bold text-primary q-mt-sm">
-        <span v-if="property.transactionType === 'VENDA' || property.transactionType === 'AMBOS'">
-          R$ {{ formatPrice(property.priceSale) }}
+        <span v-if="property.transaction_type === 'VENDA' || property.transaction_type === 'AMBOS'">
+          R$ {{ formatPrice(property.price) }}
         </span>
-        <span v-if="property.transactionType === 'ALUGUEL' || property.transactionType === 'AMBOS'">
-          <span v-if="property.transactionType === 'AMBOS'"> / </span>
-          R$ {{ formatPrice(property.priceRent) }} / mês
+        <span
+          v-if="property.transaction_type === 'ALUGUEL' || property.transaction_type === 'AMBOS'"
+        >
+          <span v-if="property.transaction_type === 'AMBOS'" class="q-mx-xs"> / </span>
+          R$ {{ formatPrice(property.price) }} / mês
         </span>
       </div>
     </q-card-section>
@@ -32,8 +36,8 @@
         <div v-if="property.bathrooms">
           <q-icon name="bathtub" size="16px" /> {{ property.bathrooms }}
         </div>
-        <div v-if="property.areaBuilt">
-          <q-icon name="square_foot" size="16px" /> {{ property.areaBuilt }} m²
+        <div v-if="property.area">
+          <q-icon name="square_foot" size="16px" /> {{ property.area }} m²
         </div>
       </div>
     </q-card-section>
@@ -42,7 +46,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { Property } from 'src/stores/property';
+import type { Property } from 'src/stores/property'; // Certifique-se de que este path está correto
 
 interface Props {
   property: Property;
@@ -50,15 +54,26 @@ interface Props {
 
 const props = defineProps<Props>();
 
+// Base URL para imagens, obtida das variáveis de ambiente do Vite
+const imageBaseUrl = import.meta.env.VITE_APP_IMAGE_URL || '';
+
 const mainImage = computed<string>(() => {
   if (props.property.images && props.property.images.length > 0) {
-    return props.property.images[0].url;
+    const imageUrl = props.property.images[0].url;
+    // Verifica se a URL já está completa (começa com http/https)
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      console.log('Img', imageUrl);
+      return imageUrl;
+    }
+    // Se não estiver completa, prefixa com a base URL
+    return `${imageBaseUrl}${imageUrl}`;
   }
+  // Imagem placeholder se não houver imagens
   return 'https://via.placeholder.com/400x300?text=Imóvel';
 });
 
 const formatPrice = (price: number | undefined): string => {
-  if (!price) return '0,00';
+  if (price === undefined || price === null) return '0,00'; // Lida com undefined ou null
   return price.toLocaleString('pt-BR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,

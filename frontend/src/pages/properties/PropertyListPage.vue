@@ -91,7 +91,7 @@
         </template>
 
         <template v-slot:body-cell-price="props">
-          <q-td :props="props"> R$ {{ formatPrice(props.row.price) }} </q-td>
+          <q-td :props="props"> {{ formatPrice(props.row.price) }} </q-td>
         </template>
 
         <template v-slot:body-cell-type="props">
@@ -294,8 +294,16 @@ const deleteProperty = (id: string) => {
   });
 };
 
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('pt-BR').format(price);
+const formatPrice = (price: number | null | undefined): string => {
+  if (price === null || price === undefined) {
+    return 'R$ 0,00';
+  }
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(price);
 };
 
 const getTypeLabel = (type: string) => {

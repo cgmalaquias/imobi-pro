@@ -25,17 +25,23 @@ class Visit extends Model
         'preferred_date',
         'preferred_time',
         'message',
+        'user_id', // Adicionado
+        'internal_notes', // Adicionado
         'status',
-        'internal_notes',
     ];
 
     protected $casts = [
-        'date' => 'date',
+        'preferred_date' => 'date',
     ];
 
     public function property(): BelongsTo
     {
         return $this->belongsTo(Property::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public static function getStatuses(): array

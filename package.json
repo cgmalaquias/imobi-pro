@@ -1,8 +1,8 @@
 {
   "name": "imobi-pro",
   "version": "1.0.0",
-  "description": "Sistema completo de gestão imobiliária com CRM integrado",
-  "author": "Cláudio",
+  "description": "Karina Carvalo - Corretora de Imóveis",
+  "author": "Cláudio Malaquias <empreendedoresdoreino33@gmail.com>",
   "license": "MIT",
   "private": true,
   "scripts": {

@@ -21,38 +21,55 @@ class PropertyController extends Controller
 
     public function index(Request $request)
     {
-        $query = Property::query();
+        $query = Property::with(['images', 'features']);
 
-        // Filtros
+        // Filtro por tipo de transação
+        // Filtro por tipo de transação
+        if ($request->has('transactionType')) {
+            $transactionType = $request->input('transactionType');
+
+            // Aplica o filtro se não for 'AMBOS' ou se 'AMBOS' não for um valor válido para filtro
+            // Pelo que entendi, 'AMBOS' não é um valor que existe no campo transaction_type do BD,
+            // mas sim uma opção de filtro no frontend para "não filtrar por tipo de transação".
+            // Se 'AMBOS' for um valor real no BD, a lógica precisaria ser diferente.
+            // Assumindo que 'ALUGUEL' e 'VENDA' são os valores no BD.
+            if ($transactionType !== 'AMBOS') {
+                $query->where('transaction_type', $transactionType);
+            }
+            if ($request->has('featured') && $request->input('featured') === 'true') {
+                $query->where('featured', true);
+            }
+        }
+        // Outros filtros (já existentes)
         if ($request->has('type')) {
-            $query->where('type', $request->type);
+            $query->where('type', $request->input('type'));
         }
-
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-
         if ($request->has('city')) {
-            $query->where('city', $request->city);
+            $query->where('city', 'ilike', '%' . $request->input('city') . '%');
         }
-
-        if ($request->has('minPrice')) {
-            $query->where('price', '>=', $request->minPrice);
+        if ($request->has('status')) {
+            $query->where('status', $request->input('status'));
         }
-
-        if ($request->has('maxPrice')) {
-            $query->where('price', '<=', $request->maxPrice);
+        if ($request->has('featured') && $request->input('featured') === 'true') {
+            $query->where('featured', true);
         }
-
         if ($request->has('search')) {
-            $search = $request->search;
-            $query->where('title', 'like', "%$search%")
-                ->orWhere('description', 'like', "%$search%")
-                ->orWhere('address', 'like', "%$search%");
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'ilike', '%' . $search . '%')
+                    ->orWhere('description', 'ilike', '%' . $search . '%')
+                    ->orWhere('address', 'ilike', '%' . $search . '%')
+                    ->orWhere('neighborhood', 'ilike', '%' . $search . '%');
+            });
+        }
+        if ($request->has('minPrice')) {
+            $query->where('price', '>=', $request->input('minPrice'));
+        }
+        if ($request->has('maxPrice')) {
+            $query->where('price', '<=', $request->input('maxPrice'));
         }
 
-        $properties = $query->with(['images', 'features'])
-            ->paginate(12);
+        $properties = $query->paginate($request->input('limit', 12));
 
         return response()->json($properties);
     }
@@ -191,5 +208,14 @@ class PropertyController extends Controller
         $property->delete();
 
         return response()->json(['message' => 'Property deleted successfully']);
+    }
+
+    public function showBySlug(string $slug)
+    {
+        $property = Property::with('images', 'features')
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        return response()->json($property);
     }
 }

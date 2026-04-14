@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Property extends Model
 {
@@ -24,6 +25,7 @@ class Property extends Model
 
     protected $fillable = [
         'title',
+        'slug',
         'description',
         'transaction_type',
         'type',
@@ -34,6 +36,7 @@ class Property extends Model
         'bathrooms',
         'garages',
         'address',
+        'neighborhood',
         'city',
         'state',
         'zip_code',
@@ -51,6 +54,30 @@ class Property extends Model
         'garages' => 'integer',
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($property) {
+            if (empty($property->slug)) {
+                $property->slug = static::generateSlug($property->title, $property->city, $property->neighborhood);
+            }
+        });
+
+        static::updating(function ($property) {
+            if ($property->isDirty('title') || $property->isDirty('city') || $property->isDirty('neighborhood')) {
+                $property->slug = static::generateSlug($property->title, $property->city, $property->neighborhood);
+            }
+        });
+    }
+
+    protected static function generateSlug($title, $city = null, $neighborhood = null)
+    {
+        $base = trim($title . ' ' . $neighborhood . ' ' . $city);
+        $slug = Str::slug($base);
+
+        // Garante unicidade básica
+        $count = static::where('slug', 'like', "{$slug}%")->count();
+        return $count ? "{$slug}-{$count}" : $slug;
+    }
     public function images(): HasMany
     {
         return $this->hasMany(PropertyImage::class)->orderBy('order');

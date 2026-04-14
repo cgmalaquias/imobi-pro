@@ -76,7 +76,7 @@
     <!-- Grid de imóveis -->
     <div v-if="!loading && properties.length > 0" class="row q-col-gutter-md">
       <div v-for="property in properties" :key="property.id" class="col-12 col-sm-6 col-md-4">
-        <q-card class="cursor-pointer property-card" @click="viewProperty(property.id)">
+        <q-card class="cursor-pointer property-card" @click="viewProperty(property)">
           <img :src="property.images?.[0]?.url || '/placeholder.jpg'" ratio="16/9" />
           <div class="absolute-top-right q-pa-sm">
             <q-badge
@@ -91,7 +91,9 @@
               <q-icon name="place" size="xs" />
               {{ property.city }} - {{ property.state }}
             </div>
-            <div class="text-h5 text-primary q-mt-sm">R$ {{ formatPrice(property.price) }}</div>
+            <div class="text-h5 text-primary q-mt-sm">
+              {{ formatPrice(property.price) }}
+            </div>
           </q-card-section>
 
           <q-card-section class="q-pt-none">
@@ -210,12 +212,23 @@ const loadProperties = async () => {
   }
 };
 
-const viewProperty = async (id: string) => {
-  await router.push(`/imovel/${id}`);
+const viewProperty = (property: Property) => {
+  void router.push({
+    name: 'public-property-detail',
+    params: { slug: property.slug || property.id },
+  });
 };
 
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('pt-BR').format(price);
+const formatPrice = (price: number | null | undefined): string => {
+  if (price === null || price === undefined) {
+    return 'R$ 0,00';
+  }
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(price);
 };
 
 const getStatusColor = (status: string) => {
@@ -245,8 +258,10 @@ onMounted(async () => {
 .property-card {
   transition: transform 0.2s;
 }
-
-.property-card:hover {
+.q-card img {
+  height: 250px !important;
+}
+.property-card .property-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }

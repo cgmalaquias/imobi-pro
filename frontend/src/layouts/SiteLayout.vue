@@ -54,9 +54,19 @@
           @click="router.push({ name: 'site-home' })"
           class="q-mx-xs text-weight-medium header-link"
         />
-        <q-btn flat label="Sobre Nós" class="q-mx-xs text-weight-medium header-link" />
-        <q-btn flat label="Blog" class="q-mx-xs text-weight-medium header-link" />
-        <q-btn flat label="Contato" class="q-mx-xs text-weight-medium header-link" />
+        <q-btn
+          flat
+          label="Conheça um pouco sobre a empresa"
+          @click="router.push({ name: 'site-about' })"
+          class="q-mx-xs text-weight-medium header-link"
+        />
+        <!-- ❌ Botão "Blog" removido -->
+        <q-btn
+          flat
+          label="Contato"
+          @click="openWhatsApp"
+          class="q-mx-xs text-weight-medium header-link"
+        />
 
         <q-separator vertical inset class="q-mx-md" />
 
@@ -81,7 +91,7 @@
     </q-header>
 
     <!-- Conteúdo Principal -->
-    <q-page-container style="margin-top: 120px">
+    <q-page-container style="margin-top: 40px">
       <router-view />
 
       <!-- Footer (não fixo, dentro do page-container) -->
@@ -198,6 +208,10 @@
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
+
+const openWhatsApp = () => {
+  window.open('https://wa.me/5541995850231', '_blank');
+};
 </script>
 
 <style scoped>

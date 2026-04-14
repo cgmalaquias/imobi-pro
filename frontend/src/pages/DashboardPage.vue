@@ -120,7 +120,8 @@
                 <div class="text-h6">Últimas Visitas Agendadas</div>
               </div>
               <div class="col-auto">
-                <q-btn label="Ver todas" color="primary" flat to="/admin/leads" />
+                <!-- <q-btn label="Ver todas" color="primary" flat to="/admin/leads" /> -->
+                <q-btn label="Ver todas" color="primary" flat to="#" class="disabled" />
               </div>
             </div>
 
@@ -162,7 +163,9 @@
               </q-item>
             </q-list>
 
-            <div v-else class="text-center text-grey-7 q-pa-md">Nenhuma visita agendada</div>
+            <div v-else class="text-center text-grey-7 q-pa-md">
+              Nenhuma visita agendada recentemente
+            </div>
           </q-card-section>
         </q-card>
       </div>

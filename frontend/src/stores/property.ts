@@ -7,6 +7,7 @@ export type PropertyStatus = 'DISPONIVEL' | 'VENDIDO' | 'ALUGADO';
 
 export interface PropertyImage {
   id: string;
+  slug: string;
   url: string;
   property_id: string;
   created_at: string;
@@ -15,6 +16,7 @@ export interface PropertyImage {
 
 export interface Property {
   id: string;
+  slug: string;
   title: string;
   description: string;
   price: number;
@@ -76,6 +78,11 @@ export const propertyService = {
   async getById(id: string): Promise<Property> {
     // Usando o helper 'api' para fazer a requisição GET
     return api.get(`/properties/${id}`);
+  },
+
+  async getBySlug(slug: string): Promise<Property> {
+    // Usando o helper 'api' para fazer a requisição GET
+    return api.get(`/properties/${slug}`);
   },
 
   async create(payload: FormData): Promise<Property> {

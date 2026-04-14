@@ -1,34 +1,30 @@
 <template>
   <q-page class="q-pa-md">
-    <div class="text-h4 q-mb-md">
-      {{ isEdit ? 'Editar Imóvel' : 'Novo Imóvel' }}
-    </div>
-
     <q-form @submit="handleSubmit" class="row q-col-gutter-md">
       <!-- Coluna esquerda -->
       <div class="col-12 col-md-8">
-        <!-- Informações básicas -->
+        <!-- Informações Básicas -->
         <q-card class="q-mb-md">
           <q-card-section>
             <div class="text-h6 q-mb-md">Informações Básicas</div>
 
             <q-input
               v-model="form.title"
-              label="Título"
+              label="Título do Imóvel"
               outlined
               dense
-              :rules="[(val) => !!val || 'Título obrigatório']"
               class="q-mb-md"
+              :rules="[(val) => !!val || 'Título é obrigatório']"
             />
 
             <q-input
               v-model="form.description"
-              label="Descrição"
+              label="Descrição Detalhada"
               type="textarea"
               outlined
               rows="5"
-              :rules="[(val) => !!val || 'Descrição obrigatória']"
               class="q-mb-md"
+              :rules="[(val) => !!val || 'Descrição é obrigatória']"
             />
 
             <div class="row q-col-gutter-md q-mb-md">
@@ -36,95 +32,100 @@
                 <q-select
                   v-model="form.type"
                   :options="propertyTypes"
-                  label="Tipo"
-                  outlined
-                  dense
-                  :rules="[(val) => !!val || 'Tipo obrigatório']"
-                />
-              </div>
-
-              <div class="col-12 col-md-4">
-                <q-select
-                  v-model="form.transaction_type"
-                  :options="transactionTypeOptions"
-                  label="Tipo de Negociação"
+                  label="Tipo de Imóvel"
                   outlined
                   dense
                   emit-value
                   map-options
-                  :rules="[(val) => !!val || 'Tipo de negociação é obrigatório']"
+                  :rules="[(val) => !!val || 'Tipo é obrigatório']"
                 />
               </div>
-
+              <div class="col-12 col-md-4">
+                <q-select
+                  v-model="form.transaction_type"
+                  :options="transactionTypeOptions"
+                  label="Tipo de Negócio"
+                  outlined
+                  dense
+                  emit-value
+                  map-options
+                  :rules="[(val) => !!val || 'Tipo de negócio é obrigatório']"
+                />
+              </div>
               <div class="col-12 col-md-4">
                 <q-select
                   v-model="form.status"
                   :options="propertyStatuses"
-                  label="Status"
+                  label="Status do Imóvel"
                   outlined
                   dense
-                  :rules="[(val) => !!val || 'Status obrigatório']"
+                  emit-value
+                  map-options
+                  :rules="[(val) => !!val || 'Status é obrigatório']"
                 />
               </div>
             </div>
           </q-card-section>
         </q-card>
 
-        <!-- Detalhes do imóvel -->
+        <!-- Detalhes e Preço -->
         <q-card class="q-mb-md">
           <q-card-section>
-            <div class="text-h6 q-mb-md">Detalhes</div>
+            <div class="text-h6 q-mb-md">Detalhes e Preço</div>
 
             <div class="row q-col-gutter-md q-mb-md">
-              <div class="col-12 col-md-3">
+              <div class="col-12 col-md-6">
                 <q-input
-                  v-model.number="form.price"
-                  label="Preço"
-                  type="number"
+                  v-model="formattedPrice"
+                  :label="priceLabel"
+                  prefix="R$"
                   outlined
                   dense
-                  prefix="R$"
-                  :rules="[(val) => val > 0 || 'Preço obrigatório']"
+                  input-class="text-right"
+                  :rules="[(val) => parseCurrencyBR(val) > 0 || 'Preço é obrigatório']"
                 />
               </div>
-
-              <div class="col-12 col-md-3">
+              <div class="col-12 col-md-6">
                 <q-input
                   v-model.number="form.area"
                   label="Área (m²)"
                   type="number"
                   outlined
                   dense
+                  min="0"
                 />
               </div>
+            </div>
 
-              <div class="col-12 col-md-2">
+            <div class="row q-col-gutter-md">
+              <div class="col-12 col-md-3">
                 <q-input
                   v-model.number="form.bedrooms"
                   label="Quartos"
                   type="number"
                   outlined
                   dense
+                  min="0"
                 />
               </div>
-
-              <div class="col-12 col-md-2">
+              <div class="col-12 col-md-3">
                 <q-input
                   v-model.number="form.bathrooms"
                   label="Banheiros"
                   type="number"
                   outlined
                   dense
+                  min="0"
                 />
               </div>
-
-              <div class="col-12 col-md-2">
+              <div class="col-12 col-md-3">
                 <q-input
                   v-model.number="form.garages"
-                  label="Vagas de garagem"
+                  label="Vagas de Garagem"
                   type="number"
                   outlined
                   dense
+                  min="0"
                 />
               </div>
             </div>
@@ -144,51 +145,47 @@
                   outlined
                   dense
                   mask="#####-###"
-                  :rules="[(val) => !!val || 'CEP obrigatório']"
                   @blur="onCepBlur"
-                  :loading="loadingCep"
-                />
+                  :rules="[(val) => !!val || 'CEP é obrigatório']"
+                >
+                  <template v-slot:append>
+                    <q-icon v-if="loadingCep" name="sync" class="q-spinner" />
+                    <q-icon v-else name="search" />
+                  </template>
+                </q-input>
               </div>
-
               <div class="col-12 col-md-8">
                 <q-input
-                  v-if="!loadingCep"
                   v-model="form.address"
-                  label="Endereço (logradouro)"
+                  label="Endereço"
                   outlined
                   dense
-                  :rules="[(val) => !!val || 'Endereço obrigatório']"
+                  :rules="[(val) => !!val || 'Endereço é obrigatório']"
                 />
-                <template v-else>
-                  <q-skeleton type="QInput" height="40px" />
-                </template>
               </div>
             </div>
 
             <div class="row q-col-gutter-md q-mt-sm">
               <div class="col-12 col-md-4">
                 <q-input
-                  v-if="!loadingCep"
                   v-model="form.neighborhood"
                   label="Bairro"
                   outlined
                   dense
+                  :rules="[(val) => !!val || 'Bairro é obrigatório']"
                 />
-
-                <template v-else>
-                  <q-skeleton type="QInput" height="40px" />
-                </template>
               </div>
               <div class="col-12 col-md-4">
-                <q-input v-if="!loadingCep" v-model="form.city" label="Cidade" outlined dense />
-
-                <template v-else>
-                  <q-skeleton type="QInput" height="40px" />
-                </template>
+                <q-input
+                  v-model="form.city"
+                  label="Cidade"
+                  outlined
+                  dense
+                  :rules="[(val) => !!val || 'Cidade é obrigatória']"
+                />
               </div>
               <div class="col-12 col-md-4">
                 <q-select
-                  v-if="!loadingCep"
                   v-model="form.state"
                   :options="brazilianStates"
                   label="Estado (UF)"
@@ -199,39 +196,15 @@
                   clearable
                   :rules="[(val) => !!val || 'Estado obrigatório']"
                 />
-
-                <template v-else>
-                  <q-skeleton type="QInput" height="40px" />
-                </template>
               </div>
             </div>
 
             <div class="row q-col-gutter-md q-mt-sm">
               <div class="col-12 col-md-6">
-                <q-input
-                  v-if="!loadingCep"
-                  v-model="form.latitude"
-                  label="Latitude"
-                  outlined
-                  dense
-                />
-
-                <template v-else>
-                  <q-skeleton type="QInput" height="40px" />
-                </template>
+                <q-input v-model="form.latitude" label="Latitude" outlined dense />
               </div>
               <div class="col-12 col-md-6">
-                <q-input
-                  v-if="!loadingCep"
-                  v-model="form.longitude"
-                  label="Longitude"
-                  outlined
-                  dense
-                />
-
-                <template v-else>
-                  <q-skeleton type="QInput" height="40px" />
-                </template>
+                <q-input v-model="form.longitude" label="Longitude" outlined dense />
               </div>
             </div>
           </q-card-section>
@@ -281,7 +254,7 @@
 
             <q-file
               v-model="imageFiles"
-              label="Selecionar imagens"
+              label="Selecionar novas imagens"
               outlined
               dense
               multiple
@@ -291,10 +264,13 @@
               class="q-mb-md"
             />
 
+            <div v-if="form.images.length > 0" class="text-subtitle2 q-mb-sm">
+              Imagens Existentes:
+            </div>
             <div v-if="form.images.length > 0" class="row q-col-gutter-sm">
-              <div v-for="(image, index) in form.images" :key="index" class="col-6">
+              <div v-for="(image, index) in form.images" :key="image.id || index" class="col-6">
                 <div class="relative-position">
-                  <img :src="image.url" ratio="1" class="rounded-borders" />
+                  <q-img :src="image.url" ratio="1" class="rounded-borders" />
                   <q-btn
                     flat
                     dense
@@ -303,14 +279,14 @@
                     color="negative"
                     size="sm"
                     class="absolute-top-right"
-                    @click="removeImage(index)"
+                    @click="removeExistingImage(index)"
                   />
                 </div>
               </div>
             </div>
 
             <div v-if="imageFiles.length > 0" class="text-caption text-grey-7 q-mt-md">
-              {{ imageFiles.length }} imagem(ns) selecionada(s)
+              {{ imageFiles.length }} nova(s) imagem(ns) selecionada(s)
             </div>
           </q-card-section>
         </q-card>
@@ -356,7 +332,7 @@ const $q = useQuasar();
 const isEdit = ref(false);
 const loading = ref(false);
 const submitting = ref(false);
-const imageFiles = ref<File[]>([]);
+const imageFiles = ref<File[]>([]); // Para novas imagens
 const newFeature = ref('');
 
 const form = ref({
@@ -365,7 +341,7 @@ const form = ref({
   type: 'CASA' as string,
   status: 'DISPONIVEL' as string,
   transaction_type: 'VENDA' as string,
-  price: 0,
+  price: 0, // Valor numérico puro
   area: null as number | null,
   bedrooms: null as number | null,
   bathrooms: null as number | null,
@@ -377,7 +353,7 @@ const form = ref({
   zip_code: '',
   latitude: null as number | null,
   longitude: null as number | null,
-  images: [] as PropertyImage[],
+  images: [] as PropertyImage[], // Para imagens existentes
   features: [] as string[],
 });
 
@@ -432,6 +408,30 @@ const brazilianStates = [
   { label: 'TO', value: 'TO' },
 ];
 
+// Computed property para o preço formatado (R$ 9.999,99)
+const formattedPrice = computed({
+  get: () => formatCurrencyBR(form.value.price),
+  set: (val) => {
+    form.value.price = parseCurrencyBR(val);
+  },
+});
+
+const formatCurrencyBR = (value: number | string): string => {
+  const num = Number(value || 0);
+  return num.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+const parseCurrencyBR = (value: string | null): number => {
+  if (!value) return 0;
+  // Remove R$, pontos de milhar e troca vírgula por ponto decimal
+  const normalized = value.replace(/[R$\s.]/g, '').replace(',', '.');
+  const num = parseFloat(normalized);
+  return isNaN(num) ? 0 : num;
+};
+
 // (Opcional) Computed para mudar o label do preço dinamicamente
 const priceLabel = computed(() => {
   switch (form.value.transaction_type) {
@@ -461,6 +461,13 @@ const onCepBlur = async () => {
         type: 'warning',
         message: 'CEP não encontrado.',
       });
+      // Limpa campos de endereço se o CEP não for encontrado
+      form.value.address = '';
+      form.value.neighborhood = '';
+      form.value.city = '';
+      form.value.state = '';
+      form.value.latitude = null;
+      form.value.longitude = null;
       return;
     }
 
@@ -469,7 +476,6 @@ const onCepBlur = async () => {
     form.value.city = data.localidade || '';
     form.value.state = data.uf || '';
 
-    // depois vamos complementar com latitude/longitude
     await fetchLatLongFromAddress();
   } catch (error) {
     $q.notify({
@@ -495,21 +501,28 @@ const fetchLatLongFromAddress = async () => {
     const resp = await fetch(url, {
       headers: {
         'Accept-Language': 'pt-BR',
-        'User-Agent': 'ImobiPro/1.0 (seu-email@dominio.com)',
+        'User-Agent': 'ImobiPro/1.0 (seu-email@dominio.com)', // Importante para Nominatim
       },
     });
 
     const results = await resp.json();
 
     if (Array.isArray(results) && results.length > 0) {
-      form.value.latitude = results[0].lat;
-      form.value.longitude = results[0].lon;
+      form.value.latitude = parseFloat(results[0].lat);
+      form.value.longitude = parseFloat(results[0].lon);
     } else {
-      // não achou – opcional mostrar aviso
-      // Notify.create({ type: 'warning', message: 'Não foi possível localizar o endereço no mapa.' });
+      form.value.latitude = null;
+      form.value.longitude = null;
+      // Opcional: notificar que não encontrou lat/long
+      $q.notify({
+        type: 'warning',
+        message: 'Não foi possível localizar as coordenadas do endereço.',
+      });
     }
   } catch (error) {
     console.error('Erro ao buscar lat/long:', error);
+    form.value.latitude = null;
+    form.value.longitude = null;
   }
 };
 
@@ -529,7 +542,7 @@ const loadProperty = async () => {
       type: property.type,
       transaction_type: property.transaction_type,
       status: property.status,
-      price: property.price,
+      price: property.price, // Já é numérico
       area: property.area || null,
       bedrooms: property.bedrooms || null,
       bathrooms: property.bathrooms || null,
@@ -544,7 +557,6 @@ const loadProperty = async () => {
       images: (property.images || []).map((img: any) => ({
         id: img.id,
         property_id: img.property_id,
-        // url: `${process.env.VITE_APP_IMAGE_URL}${img.path || img.url}`,
         url: `${import.meta.env.VITE_APP_IMAGE_URL}${img.path || img.url}`,
         order: img.order,
       })),
@@ -568,22 +580,35 @@ const addFeature = () => {
   }
 };
 
-const removeImage = (index: number) => {
+const removeExistingImage = (index: number) => {
   form.value.images.splice(index, 1);
 };
 
 const onFileRejected = (rejectedEntries: any[]) => {
   $q.notify({
     type: 'negative',
-    message: 'Arquivo muito grande (máximo 5MB)',
+    message: 'Arquivo muito grande (máximo 5MB) ou tipo inválido.',
   });
 };
 
 const handleSubmit = async () => {
-  if (!form.value.type) {
+  // Validação básica antes de enviar
+  if (
+    !form.value.title ||
+    !form.value.description ||
+    !form.value.type ||
+    !form.value.transaction_type ||
+    !form.value.status ||
+    form.value.price <= 0 ||
+    !form.value.address ||
+    !form.value.neighborhood ||
+    !form.value.city ||
+    !form.value.state ||
+    !form.value.zip_code
+  ) {
     $q.notify({
       type: 'negative',
-      message: 'Selecione um tipo de imóvel',
+      message: 'Por favor, preencha todos os campos obrigatórios.',
     });
     return;
   }
@@ -599,11 +624,12 @@ const handleSubmit = async () => {
     formData.append('type', form.value.type);
     formData.append('transaction_type', form.value.transaction_type);
     formData.append('status', form.value.status);
-    formData.append('price', String(form.value.price));
+    formData.append('price', String(form.value.price)); // Envia o número puro
     formData.append('address', form.value.address);
     formData.append('neighborhood', form.value.neighborhood);
     formData.append('city', form.value.city);
     formData.append('state', form.value.state);
+
     // Campos opcionais
     if (form.value.area) formData.append('area', String(form.value.area));
     if (form.value.bedrooms) formData.append('bedrooms', String(form.value.bedrooms));
@@ -612,6 +638,11 @@ const handleSubmit = async () => {
     if (form.value.zip_code) formData.append('zip_code', form.value.zip_code);
     if (form.value.latitude) formData.append('latitude', String(form.value.latitude));
     if (form.value.longitude) formData.append('longitude', String(form.value.longitude));
+
+    // Adicionar IDs das imagens existentes que DEVEM SER MANTIDAS
+    form.value.images.forEach((image, index) => {
+      formData.append(`existing_images_ids[${index}]`, image.id);
+    });
 
     // Adicionar imagens novas
     imageFiles.value.forEach((file, index) => {
@@ -626,6 +657,8 @@ const handleSubmit = async () => {
     let response;
 
     if (isEdit.value) {
+      // Para PUT/PATCH com FormData e arquivos, Laravel pode precisar de _method
+      formData.append('_method', 'POST'); // Laravel não aceita PUT/PATCH com FormData diretamente, use POST com _method
       response = await propertyService.update(route.params.id as string, formData);
     } else {
       response = await propertyService.create(formData);
@@ -636,11 +669,11 @@ const handleSubmit = async () => {
       message: isEdit.value ? 'Imóvel atualizado com sucesso' : 'Imóvel criado com sucesso',
     });
 
-    router.push('/admin/properties');
+    void router.push('/admin/properties');
   } catch (error: any) {
     $q.notify({
       type: 'negative',
-      message: error.message || 'Erro ao salvar imóvel',
+      message: error?.response?.data?.message || error?.message || 'Erro ao salvar imóvel',
     });
   } finally {
     submitting.value = false;

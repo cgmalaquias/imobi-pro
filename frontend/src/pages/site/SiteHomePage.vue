@@ -126,7 +126,7 @@
             :key="property.id"
             class="col-12 col-sm-6 col-md-4 col-lg-3"
           >
-            <PropertyCard :property="property" @click="openPublicDetails(property.id)" />
+            <PropertyCard :property="property" @click="openPublicDetails(property)" />
           </div>
         </div>
       </div>
@@ -156,7 +156,7 @@
             :key="property.id"
             class="col-12 col-sm-6 col-md-4 col-lg-3"
           >
-            <PropertyCard :property="property" @click="openPublicDetails(property.id)" />
+            <PropertyCard :property="property" @click="openPublicDetails(property)" />
           </div>
         </div>
       </div>
@@ -189,7 +189,7 @@
             :key="property.id"
             class="col-12 col-sm-6 col-md-4 col-lg-3"
           >
-            <PropertyCard :property="property" @click="openPublicDetails(property.id)" />
+            <PropertyCard :property="property" @click="openPublicDetails(property)" />
           </div>
         </div>
       </div>
@@ -360,8 +360,11 @@ const goToPropertyList = async (
 };
 
 // Função para abrir detalhes de um imóvel
-const openPublicDetails = async (id: string): Promise<void> => {
-  await router.push({ name: 'public-property-details', params: { id } });
+const openPublicDetails = (property: Property) => {
+  void router.push({
+    name: 'public-property-detail',
+    params: { slug: property.slug || property.id },
+  });
 };
 
 // Função para abrir WhatsApp

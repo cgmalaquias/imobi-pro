@@ -44,7 +44,7 @@
         <div class="col-12 col-md-4">
           <q-card>
             <q-card-section>
-              <div class="text-h4 text-primary">R$ {{ formatPrice(property.price) }}</div>
+              <div class="text-h4 text-primary">{{ formatPrice(property.price) }}</div>
               <div class="text-subtitle1 text-grey-7 q-mt-sm">
                 {{ getTypeLabel(property.type) }}
               </div>
@@ -149,35 +149,52 @@
 
         <q-card-section class="q-pt-none">
           <q-input
-            v-model="visitForm.name"
-            label="Seu Nome"
+            v-model="visitForm.client_name"
+            label="Seu Nome*"
             outlined
             dense
             :rules="[(val) => !!val || 'Nome é obrigatório']"
             class="q-mb-sm"
           />
           <q-input
-            v-model="visitForm.email"
-            label="Seu E-mail"
+            v-model="visitForm.client_email"
+            label="Seu E-mail*"
             outlined
             dense
             type="email"
             :rules="[(val) => !!val || 'E-mail é obrigatório']"
             class="q-mb-sm"
           />
-          <q-input v-model="visitForm.phone" label="Seu Telefone" outlined dense class="q-mb-sm" />
+          <q-input
+            v-model="visitForm.client_phone"
+            label="Seu Telefone*"
+            outlined
+            dense
+            :rules="[(val) => !!val || 'E-mail é obrigatório']"
+            class="q-mb-sm"
+            mask="(##) # ####-####"
+          />
 
           <div class="row q-col-gutter-sm q-mb-sm">
             <div class="col-6">
-              <q-input v-model="visitForm.date" label="Data desejada" outlined dense type="date" />
+              <q-input
+                v-model="visitForm.preferred_date"
+                type="date"
+                label="Data desejada"
+                outlined
+                dense
+                :rules="[(val) => !!val || 'E-mail é obrigatório']"
+                :min="minDate"
+              />
             </div>
             <div class="col-6">
               <q-input
-                v-model="visitForm.time"
+                v-model="visitForm.preferred_time"
+                type="time"
                 label="Horário desejado"
                 outlined
                 dense
-                type="time"
+                :rules="[(val) => !!val || 'E-mail é obrigatório']"
               />
             </div>
           </div>
@@ -202,6 +219,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { useMeta } from 'quasar';
 import { useRoute } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { visitService, type CreateVisitData } from 'src/services/visit.service';
@@ -217,11 +235,11 @@ const currentImage = ref(0);
 const showVisitDialog = ref(false);
 
 const visitForm = ref<Omit<CreateVisitData, 'property_id'>>({
-  name: '',
-  email: '',
-  phone: '',
-  date: '',
-  time: '',
+  client_name: '',
+  client_email: '',
+  client_phone: '',
+  preferred_date: '',
+  preferred_time: '',
   message: '',
 });
 
@@ -235,8 +253,11 @@ const loadProperty = async () => {
   loading.value = true;
 
   try {
-    const id = route.params.id as string;
-    const fetchedProperty = await propertyService.getById(id);
+    // const id = route.params.id as string;
+    // const fetchedProperty = await propertyService.getById(id);
+
+    const slug = route.params.slug as string;
+    const fetchedProperty = await propertyService.getBySlug(slug);
 
     // Garante que as imagens tenham URL completa
     fetchedProperty.images = (fetchedProperty.images || []).map((img: any) => ({
@@ -260,11 +281,11 @@ const scheduleVisit = async () => {
 
   // validação simples no front
   if (
-    !visitForm.value.name ||
-    !visitForm.value.email ||
-    !visitForm.value.phone ||
-    !visitForm.value.date ||
-    !visitForm.value.time
+    !visitForm.value.client_name ||
+    !visitForm.value.client_email ||
+    !visitForm.value.client_phone ||
+    !visitForm.value.preferred_date ||
+    !visitForm.value.preferred_time
   ) {
     $q.notify({
       type: 'warning',
@@ -278,11 +299,11 @@ const scheduleVisit = async () => {
   try {
     await visitService.create({
       property_id: property.value.id,
-      name: visitForm.value.name,
-      email: visitForm.value.email,
-      phone: visitForm.value.phone,
-      date: visitForm.value.date,
-      time: visitForm.value.time,
+      client_name: visitForm.value.client_name,
+      client_email: visitForm.value.client_email,
+      client_phone: visitForm.value.client_phone,
+      preferred_date: visitForm.value.preferred_date,
+      preferred_time: visitForm.value.preferred_time,
       message: visitForm.value.message,
     });
 
@@ -293,11 +314,11 @@ const scheduleVisit = async () => {
 
     showVisitDialog.value = false;
     visitForm.value = {
-      name: '',
-      email: '',
-      phone: '',
-      date: '',
-      time: '',
+      client_name: '',
+      client_email: '',
+      client_phone: '',
+      preferred_date: '',
+      preferred_time: '',
       message: '',
     };
   } catch (error: any) {
@@ -310,8 +331,16 @@ const scheduleVisit = async () => {
   }
 };
 
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('pt-BR').format(price);
+const formatPrice = (price: number | null | undefined): string => {
+  if (price === null || price === undefined) {
+    return 'R$ 0,00'; // Ou qualquer valor padrão que você prefira para nulos/indefinidos
+  }
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(price);
 };
 
 const getTypeLabel = (type: string) => {
@@ -342,6 +371,64 @@ const getStatusLabel = (status: string) => {
   };
   return labels[status] || status;
 };
+
+useMeta(() => {
+  if (!property.value) {
+    return { title: 'Carregando imóvel...' };
+  }
+
+  const tipoLabel: Record<string, string> = {
+    CASA: 'Casa',
+    APARTAMENTO: 'Apartamento',
+    COMERCIAL: 'Comercial',
+    TERRENO: 'Terreno',
+    FAZENDA: 'Fazenda',
+  };
+
+  const transacaoLabel: Record<string, string> = {
+    VENDA: 'à venda',
+    ALUGUEL: 'para alugar',
+    TROCA: 'para troca',
+    'A COMBINAR': 'a combinar',
+  };
+
+  const tipo = tipoLabel[property.value.type] ?? property.value.type;
+  const transacao = transacaoLabel[property.value.transaction_type] ?? '';
+  const title = `${tipo} ${transacao} em ${property.value.neighborhood}, ${property.value.city} - ${property.value.state}`;
+  const description = `${title}. ${property.value.description?.slice(0, 130) ?? ''}...`;
+  const image = property.value.images?.[0]?.url ?? '';
+  const url = `${window.location.origin}/imovel/${property.value.slug}`;
+
+  return {
+    title,
+    meta: {
+      description: {
+        name: 'description',
+        content: description,
+      },
+      ogTitle: {
+        property: 'og:title',
+        content: title,
+      },
+      ogDescription: {
+        property: 'og:description',
+        content: description,
+      },
+      ogImage: {
+        property: 'og:image',
+        content: image,
+      },
+      ogUrl: {
+        property: 'og:url',
+        content: url,
+      },
+      ogType: {
+        property: 'og:type',
+        content: 'article',
+      },
+    },
+  };
+});
 
 onMounted(async () => {
   await loadProperty();

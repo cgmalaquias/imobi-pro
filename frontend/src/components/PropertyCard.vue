@@ -17,13 +17,13 @@
       </div>
       <div class="text-body1 text-weight-bold text-primary q-mt-sm">
         <span v-if="property.transaction_type === 'VENDA' || property.transaction_type === 'AMBOS'">
-          R$ {{ formatPrice(property.price) }}
+          {{ formatPrice(property.price) }}
         </span>
         <span
           v-if="property.transaction_type === 'ALUGUEL' || property.transaction_type === 'AMBOS'"
         >
           <span v-if="property.transaction_type === 'AMBOS'" class="q-mx-xs"> / </span>
-          R$ {{ formatPrice(property.price) }} / mês
+          {{ formatPrice(property.price) }} / mês
         </span>
       </div>
     </q-card-section>
@@ -72,12 +72,16 @@ const mainImage = computed<string>(() => {
   return 'https://via.placeholder.com/400x300?text=Imóvel';
 });
 
-const formatPrice = (price: number | undefined): string => {
-  if (price === undefined || price === null) return '0,00'; // Lida com undefined ou null
-  return price.toLocaleString('pt-BR', {
+const formatPrice = (price: number | null | undefined): string => {
+  if (price === null || price === undefined) {
+    return 'R$ 0,00';
+  }
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  });
+  }).format(price);
 };
 </script>
 

@@ -4,9 +4,6 @@
       <div class="col">
         <div class="text-h4">Visitas Agendadas</div>
       </div>
-      <div class="col-auto">
-        <q-btn label="Novo Lead" color="primary" icon="add" to="/admin/leads/create" />
-      </div>
     </div>
 
     <!-- Filtros -->
@@ -21,18 +18,21 @@
               outlined
               dense
               clearable
-              @update:model-value="loadVisits"
+              emit-value
+              map-options
+              @update:model-value="resetAndLoad"
             />
           </div>
 
           <div class="col-12 col-md-4">
             <q-input
               v-model="filters.search"
-              label="Buscar por nome ou e-mail"
+              label="Buscar por nome, e-mail ou telefone"
               outlined
               dense
               clearable
-              @update:model-value="loadVisits"
+              debounce="300"
+              @update:model-value="resetAndLoad"
             >
               <template v-slot:prepend>
                 <q-icon name="search" />
@@ -61,27 +61,37 @@
         row-key="id"
         :loading="loading"
         v-model:pagination="pagination"
-        @request="loadVisits"
+        @request="onRequest"
         flat
         bordered
+        separator="cell"
+        :rows-per-page-options="[5, 10, 20, 50]"
+        no-data-label="Nenhuma visita encontrada"
       >
-        <template v-slot:body-cell-name="props">
+        <template v-slot:body-cell-client_name="props">
           <q-td :props="props">
-            <div class="font-bold">{{ props.row.name }}</div>
-            <div class="text-caption text-grey-7">{{ props.row.email }}</div>
+            <div class="text-weight-bold">{{ props.row.client_name }}</div>
+            <div class="text-caption text-grey-7">{{ props.row.client_email }}</div>
           </q-td>
         </template>
 
         <template v-slot:body-cell-property="props">
           <q-td :props="props">
-            {{ props.row.property?.title || 'N/A' }}
+            <router-link
+              v-if="props.row.property"
+              :to="`/admin/properties/${props.row.property.id}`"
+              class="text-primary text-weight-bold"
+            >
+              {{ props.row.property.title || 'N/A' }}
+            </router-link>
+            <span v-else class="text-grey-6">N/A</span>
           </q-td>
         </template>
 
-        <template v-slot:body-cell-date="props">
+        <template v-slot:body-cell-preferred_date="props">
           <q-td :props="props">
-            {{ formatDate(props.row.date) }}
-            <div class="text-caption text-grey-7">{{ props.row.time }}</div>
+            <div>{{ formatDate(props.row.preferred_date) }}</div>
+            <div class="text-caption text-grey-7">{{ props.row.preferred_time }}</div>
           </q-td>
         </template>
 
@@ -95,7 +105,7 @@
         </template>
 
         <template v-slot:body-cell-actions="props">
-          <q-td :props="props">
+          <q-td :props="props" auto-width>
             <q-btn
               flat
               dense
@@ -115,7 +125,7 @@
               icon="edit"
               color="warning"
               size="sm"
-              @click="editVisit(props.row.id)"
+              @click="editVisit(props.row)"
             >
               <q-tooltip>Editar status</q-tooltip>
             </q-btn>
@@ -124,16 +134,14 @@
       </q-table>
     </q-card>
 
-    <!-- Loading -->
-    <q-inner-loading :showing="loading">
-      <q-spinner-gears size="50px" color="primary" />
-    </q-inner-loading>
-
     <!-- Dialog de edição de status -->
     <q-dialog v-model="showEditDialog">
       <q-card style="min-width: 400px">
         <q-card-section>
           <div class="text-h6">Atualizar Status</div>
+          <div class="text-caption text-grey-7" v-if="editingVisit">
+            {{ editingVisit.client_name }}
+          </div>
         </q-card-section>
 
         <q-card-section>
@@ -143,6 +151,8 @@
             label="Status"
             outlined
             dense
+            emit-value
+            map-options
           />
         </q-card-section>
 
@@ -159,7 +169,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import type { Visit } from 'src/services/visit.service';
+import type { Visit, PaginatedResponse } from 'src/services/visit.service';
 import { visitService } from 'src/services/visit.service';
 
 const router = useRouter();
@@ -169,56 +179,63 @@ const visits = ref<Visit[]>([]);
 const loading = ref(false);
 const submitting = ref(false);
 const showEditDialog = ref(false);
+const editingVisit = ref<Visit | null>(null);
+
 const filters = ref({
   status: null as string | null,
   search: '',
 });
+
 const pagination = ref({
-  sortBy: 'date',
+  sortBy: 'preferred_date',
   descending: true,
   page: 1,
   rowsPerPage: 10,
   rowsNumber: 0,
 });
 
-const editingVisit = ref<Visit | null>(null);
-
 const columns = [
   {
-    name: 'name',
+    name: 'client_name',
     label: 'Cliente',
-    field: 'name',
-    align: 'left',
+    field: 'client_name',
+    align: 'left' as const,
+    sortable: true,
   },
   {
     name: 'property',
     label: 'Imóvel',
     field: 'property',
-    align: 'left',
+    align: 'left' as const,
+    sortable: false,
   },
   {
-    name: 'phone',
+    name: 'client_phone',
     label: 'Telefone',
-    field: 'phone',
-    align: 'left',
+    field: 'client_phone',
+    align: 'left' as const,
+    sortable: false,
   },
   {
-    name: 'date',
-    label: 'Data/Hora',
-    field: 'date',
-    align: 'left',
+    name: 'preferred_date',
+    label: 'Data / Hora',
+    field: 'preferred_date',
+    align: 'left' as const,
+    sortable: true,
   },
   {
     name: 'status',
     label: 'Status',
     field: 'status',
-    align: 'left',
+    align: 'left' as const,
+    sortable: true,
   },
   {
     name: 'actions',
     label: 'Ações',
     field: 'actions',
-    align: 'center',
+    align: 'center' as const,
+    sortable: false,
   },
 ];
 
@@ -229,38 +246,64 @@ const visitStatuses = [
   { label: 'Cancelada', value: 'CANCELADA' },
 ];
 
+// Chamado pela q-table (clique em coluna, mudança de página, etc.)
+const onRequest = async (props: { pagination: typeof pagination.value }) => {
+  const { page, rowsPerPage, sortBy, descending } = props.pagination;
+
+  pagination.value.page = page;
+  pagination.value.rowsPerPage = rowsPerPage;
+  pagination.value.sortBy = sortBy;
+  pagination.value.descending = descending;
+
+  await loadVisits();
+};
+
+// Carrega os dados usando o estado atual de pagination + filters
 const loadVisits = async () => {
   loading.value = true;
 
   try {
-    const response = await visitService.getAll(filters.value.status || undefined);
-
-    visits.value = response.data;
-    pagination.value.rowsNumber = response.total;
+    const response: PaginatedResponse<Visit> = await visitService.getAll(
+      filters.value.status || undefined,
+      filters.value.search || undefined,
+      pagination.value.page,
+      pagination.value.rowsPerPage,
+      pagination.value.sortBy,
+      pagination.value.descending ? 'desc' : 'asc',
+    );
+    // Garante array mesmo se a API retornar algo inesperado
+    visits.value = Array.isArray(response.data) ? response.data : [];
+    pagination.value.rowsNumber = response.total ?? 0;
   } catch (error: any) {
+    console.error('Erro ao carregar visitas:', error); // ← temporário para debug
+    visits.value = [];
+    pagination.value.rowsNumber = 0;
     $q.notify({
       type: 'negative',
-      message: error.message || 'Erro ao carregar visitas',
+      message: error?.response?.data?.message || error?.message || 'Erro ao carregar visitas',
     });
   } finally {
     loading.value = false;
   }
 };
 
+// Reseta para página 1 e carrega (usado nos filtros)
+const resetAndLoad = () => {
+  pagination.value.page = 1;
+  void loadVisits();
+};
+
 const clearFilters = () => {
-  filters.value = {
-    status: null,
-    search: '',
-  };
-  loadVisits();
+  filters.value = { status: null, search: '' };
+  resetAndLoad();
 };
 
 const viewVisit = (id: string) => {
-  router.push(`/admin/leads/${id}`);
+  void router.push(`/admin/leads/${id}`);
 };
 
-const editVisit = (visit: Visit) => {
-  editingVisit.value = { ...visit };
+const editVisit = (visitData: Visit) => {
+  editingVisit.value = { ...visitData };
   showEditDialog.value = true;
 };
 
@@ -271,20 +314,16 @@ const updateVisitStatus = async () => {
 
   try {
     await visitService.update(editingVisit.value.id, {
-      status: editingVisit.value.status as any,
+      status: editingVisit.value.status,
     });
 
-    $q.notify({
-      type: 'positive',
-      message: 'Status atualizado com sucesso',
-    });
-
+    $q.notify({ type: 'positive', message: 'Status atualizado com sucesso' });
     showEditDialog.value = false;
-    loadVisits();
+    await loadVisits();
   } catch (error: any) {
     $q.notify({
       type: 'negative',
-      message: error.message || 'Erro ao atualizar status',
+      message: error?.response?.data?.message || error?.message || 'Erro ao atualizar status',
     });
   } finally {
     submitting.value = false;
@@ -292,30 +331,32 @@ const updateVisitStatus = async () => {
 };
 
 const formatDate = (date: string) => {
-  return new Intl.DateTimeFormat('pt-BR').format(new Date(date));
+  if (!date) return 'N/A';
+  // Força interpretação como UTC para evitar problema de fuso
+  return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(new Date(date));
 };
 
 const getStatusColor = (status: string) => {
-  const colors: Record<string, string> = {
+  const map: Record<string, string> = {
     PENDENTE: 'warning',
     CONFIRMADA: 'info',
     CONCLUIDA: 'positive',
     CANCELADA: 'negative',
   };
-  return colors[status] || 'grey';
+  return map[status] ?? 'grey';
 };
 
 const getStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
+  const map: Record<string, string> = {
     PENDENTE: 'Pendente',
     CONFIRMADA: 'Confirmada',
     CONCLUIDA: 'Concluída',
     CANCELADA: 'Cancelada',
   };
-  return labels[status] || status;
+  return map[status] ?? status;
 };
 
-onMounted(async () => {
-  await loadVisits();
+onMounted(() => {
+  void loadVisits();
 });
 </script>

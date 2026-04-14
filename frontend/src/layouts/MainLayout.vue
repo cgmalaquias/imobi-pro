@@ -45,7 +45,8 @@
           </q-item-section>
         </q-item>
 
-        <q-item clickable to="/admin/users" v-if="isAdmin">
+        <!-- <q-item clickable to="/admin/users" v-if="isAdmin"> -->
+        <q-item clickable to="#" v-if="isAdmin" class="disabled">
           <q-item-section avatar>
             <q-icon name="people" />
           </q-item-section>

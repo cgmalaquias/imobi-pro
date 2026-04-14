@@ -48,6 +48,7 @@ export interface User {
 
 export interface Property {
   id: string;
+  slug?: string;
   title: string;
   description: string;
   type: PropertyType;

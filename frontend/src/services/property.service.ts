@@ -1,29 +1,48 @@
 import { api } from 'src/boot/api';
 
-export interface Property {
-  neighborhood: string;
+export type PropertyType =
+  | 'CASA'
+  | 'APARTAMENTO'
+  | 'COMERCIAL'
+  | 'TERRENO'
+  | 'FAZENDA';
+export type TransactionType = 'VENDA' | 'ALUGUEL' | 'TROCA' | 'A COMBINAR';
+export type PropertyStatus = 'DISPONIVEL' | 'VENDIDO' | 'ALUGADO';
+
+export interface PropertyImage {
   id: string;
+  path: string;
+  url?: string; // Opcional, pois você constrói no frontend
+}
+
+export interface PropertyFeature {
+  id: string;
+  name: string;
+}
+export interface Property {
+  id: string;
+  slug?: string;
   title: string;
   description: string;
-  type: 'CASA' | 'APARTAMENTO' | 'COMERCIAL' | 'TERRENO' | 'FAZENDA';
-  status: 'DISPONIVEL' | 'VENDIDO' | 'ALUGADO';
-  transaction_type: 'VENDA' | 'ALUGUEL' | 'TROCA' | 'A COMBINAR';
+  type: PropertyType;
+  status: PropertyStatus;
+  transaction_type: TransactionType; // ✅ Adicione ou confirme esta linha
   price: number;
   area?: number;
   bedrooms?: number;
   bathrooms?: number;
-  garages?: number;
-  address: string;
+  suites?: number;
+  parking_spaces?: number;
+  address?: string;
+  neighborhood?: string;
   city: string;
   state: string;
   zip_code?: string;
-  latitude?: number;
-  longitude?: number;
+  featured?: boolean;
+  created_at?: string;
+  updated_at?: string;
   images?: PropertyImage[];
   features?: PropertyFeature[];
-  visits?: Visit[];
-  created_at: string;
-  updated_at: string;
 }
 
 export interface PropertyImage {
@@ -42,6 +61,7 @@ export interface PropertyFeature {
 export interface Visit {
   id: string;
   property_id: string;
+  slug: string;
   client_name: string;
   client_email: string;
   client_phone: string;
@@ -54,13 +74,16 @@ export interface Visit {
 }
 
 export interface PropertyFilters {
-  type?: string;
-  status?: string;
+  page?: number;
+  limit?: number;
+  type?: PropertyType;
   city?: string;
+  status?: PropertyStatus;
+  featured?: boolean;
+  transactionType?: TransactionType; // ✅ Este é o filtro, mas a propriedade do imóvel é transaction_type
+  search?: string;
   minPrice?: number;
   maxPrice?: number;
-  search?: string;
-  page?: number;
 }
 
 export interface PaginatedResponse<T> {
@@ -89,6 +112,10 @@ export const propertyService = {
 
   async getById(id: string): Promise<Property> {
     return api.get(`/properties/${id}`);
+  },
+
+  async getBySlug(slug: string): Promise<Property> {
+    return api.get(`/properties/slug/${slug}`);
   },
 
   async create(data: FormData): Promise<Property> {

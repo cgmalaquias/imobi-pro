@@ -70,10 +70,11 @@ export default configure((ctx) => {
       config: {},
 
       plugins: [
-        'Notify',
         'Dialog',
         'Loading',
-        'LoadingBar'
+        'LoadingBar',
+        'Meta',
+        'Notify',
       ]
     },
 

@@ -60,7 +60,7 @@
         <div class="col-12 col-md-4">
           <q-card>
             <q-card-section>
-              <div class="text-h4 text-primary">R$ {{ formatPrice(property.price) }}</div>
+              <div class="text-h4 text-primary">{{ formatPrice(property.price) }}</div>
               <div class="text-subtitle1 text-grey-7 q-mt-sm">
                 {{ getTypeLabel(property.type) }}
               </div>
@@ -216,6 +216,7 @@
 </template>
 
 <script setup lang="ts">
+import { useMeta } from 'quasar';
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
@@ -249,18 +250,16 @@ const loadProperty = async () => {
   }
 };
 
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('pt-BR').format(price);
-};
-
-const formatDate = (date: string) => {
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(date));
+const formatPrice = (price: number | null | undefined): string => {
+  if (price === null || price === undefined) {
+    return 'R$ 0,00';
+  }
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(price);
 };
 
 const getTypeLabel = (type: string) => {
@@ -314,5 +313,21 @@ const getVisitStatusLabel = (status: string) => {
 
 onMounted(async () => {
   await loadProperty();
+  useMeta({
+    title: `${property.value.title} | Karina Carvalho - Corretora de Imóveis`,
+    meta: {
+      description: `Imóvel ${property.value.type.toLowerCase()} em ${
+        property.value.neighborhood
+      }, ${property.value.city} - ${
+        property.value.state
+      }. ${property.value.description?.slice(0, 150)}...`,
+      // Open Graph
+      'og:title': `${property.value.title} | Karina Carvalho - Corretora de Imóveis`,
+      'og:description': `Imóvel em ${property.value.neighborhood}, ${property.value.city}. Veja fotos, preço e detalhes.`,
+      'og:type': 'article',
+      'og:image': property.value.images?.[0]?.url || undefined,
+      'og:url': `${import.meta.env.VITE_APP_SITE_URL}/imovel/${property.value.id}`,
+    },
+  });
 });
 </script>

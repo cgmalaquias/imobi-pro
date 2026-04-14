@@ -11,13 +11,19 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/site/SiteHomePage.vue'),
       },
       {
+        path: 'sobre',
+        name: 'site-about',
+        component: () => import('pages/site/SiteAboutPage.vue'),
+      },
+      {
         path: 'imoveis',
         name: 'public-properties',
         component: () => import('pages/public/PublicPropertyListPage.vue'),
       },
       {
-        path: 'imovel/:id',
-        name: 'public-property-details',
+        // ✅ Apenas esta — removida a duplicata com :id
+        path: 'imovel/:slug',
+        name: 'public-property-detail',
         component: () => import('pages/public/PublicPropertyDetailsPage.vue'),
       },
       {
@@ -28,7 +34,7 @@ const routes: RouteRecordRaw[] = [
     ],
   },
 
-  // ===== ROTAS DE AUTENTICAÇÃO (com AuthLayout) =====
+  // ===== ROTAS DE AUTENTICAÇÃO =====
   {
     path: '/auth',
     component: () => import('layouts/AuthLayout.vue'),
@@ -37,26 +43,20 @@ const routes: RouteRecordRaw[] = [
         path: 'login',
         name: 'login',
         component: () => import('pages/auth/LoginPage.vue'),
-        meta: { title: 'Login' }
+        meta: { title: 'Login' },
       },
       {
         path: 'register',
         name: 'register',
         component: () => import('pages/auth/RegisterPage.vue'),
-        meta: { title: 'Cadastro' }
+        meta: { title: 'Cadastro' },
       },
-    ]
+    ],
   },
 
-  // ===== REDIRECIONAMENTOS PARA MANTER COMPATIBILIDADE =====
-  {
-    path: '/login',
-    redirect: '/auth/login'
-  },
-  {
-    path: '/register',
-    redirect: '/auth/register'
-  },
+  // ===== REDIRECIONAMENTOS =====
+  { path: '/login',    redirect: '/auth/login'    },
+  { path: '/register', redirect: '/auth/register' },
 
   // ===== ROTAS ADMINISTRATIVAS =====
   {
@@ -68,98 +68,77 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'dashboard',
         component: () => import('pages/DashboardPage.vue'),
-        meta: { title: 'Dashboard' }
+        meta: { title: 'Dashboard' },
       },
       {
         path: 'properties',
         name: 'properties',
         component: () => import('pages/properties/PropertyListPage.vue'),
-        meta: { title: 'Imóveis' }
+        meta: { title: 'Imóveis' },
       },
       {
         path: 'properties/create',
         name: 'property-create',
         component: () => import('pages/properties/PropertyFormPage.vue'),
-        meta: { title: 'Cadastrar Imóvel' }
+        meta: { title: 'Cadastrar Imóvel' },
       },
       {
+        // Admin continua usando :id (não precisa de slug no admin)
         path: 'properties/:id',
         name: 'property-details',
         component: () => import('pages/properties/PropertyDetailPage.vue'),
-        meta: { title: 'Detalhes do Imóvel' }
+        meta: { title: 'Detalhes do Imóvel' },
       },
       {
         path: 'properties/:id/edit',
         name: 'property-edit',
         component: () => import('pages/properties/PropertyFormPage.vue'),
-        meta: { title: 'Editar Imóvel', requiresAuth: true, roles: ['ADMIN'] },
+        meta: { title: 'Editar Imóvel' },
       },
-      // {
-      //   path: 'clients',
-      //   name: 'clients',
-      //   component: () => import('pages/clients/ClientListPage.vue'),
-      //   meta: { title: 'Clientes' }
-      // },
-      // {
-      //   path: 'clients/create',
-      //   name: 'client-create',
-      //   component: () => import('pages/clients/ClientFormPage.vue'),
-      //   meta: { title: 'Cadastrar Cliente' }
-      // },
-      // {
-      //   path: 'clients/:id',
-      //   name: 'client-detail',
-      //   component: () => import('pages/clients/ClientDetailPage.vue'),
-      //   meta: { title: 'Detalhes do Cliente' }
-      // },
       {
         path: 'leads',
         name: 'leads',
         component: () => import('pages/leads/LeadListPage.vue'),
-        meta: { title: 'Leads' }
+        meta: { title: 'Leads' },
       },
       {
         path: 'leads/create',
         name: 'lead-create',
         component: () => import('pages/leads/LeadFormPage.vue'),
-        meta: { title: 'Cadastrar Lead' }
+        meta: { title: 'Cadastrar Lead' },
       },
       {
         path: 'leads/:id',
         name: 'lead-detail',
         component: () => import('pages/leads/LeadDetailPage.vue'),
-        meta: { title: 'Detalhes do Lead' }
+        meta: { title: 'Detalhes do Lead' },
       },
       {
         path: 'users',
         name: 'users',
         component: () => import('pages/UsersPage.vue'),
-        meta: { title: 'Usuários', requiresAdmin: true }
+        meta: { title: 'Usuários' },
       },
       {
         path: 'profile',
         name: 'profile',
         component: () => import('pages/ProfilePage.vue'),
-        meta: { title: 'Perfil' }
-      }
-    ]
+        meta: { title: 'Perfil' },
+      },
+    ],
   },
-{
-  path: '/test',
-  component: () => import('layouts/AuthLayout.vue'),
-  children: [
-    {
-      path: '',
-      component: () => import('pages/TestPage.vue'),
-    }
-  ]
-},
 
-  // ===== PÁGINA 404 =====
+  {
+    path: '/test',
+    component: () => import('layouts/AuthLayout.vue'),
+    children: [{ path: '', component: () => import('pages/TestPage.vue') }],
+  },
+
+  // ===== 404 =====
   {
     path: '/:catchAll(.*)*',
-    component: () => import('pages/ErrorNotFound.vue')
-  }
+    component: () => import('pages/ErrorNotFound.vue'),
+  },
 ];
 
 export default routes;

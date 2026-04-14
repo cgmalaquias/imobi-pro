@@ -29,20 +29,15 @@ Route::middleware('auth:jwt')->group(function () {
     // Rotas de Usuários (apenas para ADMIN)
     Route::apiResource('users', UserController::class)->middleware('can:admin'); // Exemplo de gate/policy
 
-    // Rotas de Imóveis (CRUD completo, exceto index e show que são públicas)
-    Route::post('properties/{property}/images/{imageId}', [PropertyController::class, 'deleteImage']); // Rota para deletar imagem específica
-    Route::apiResource('properties', PropertyController::class)->except(['index', 'show']);
-
-    // Rotas de Visitas (CRUD completo, pode ser ajustado para roles específicas)
-    Route::apiResource('visits', VisitController::class);
 });
 
-// Rotas de Imóveis Públicas (sem autenticação)
-Route::get('properties', [PropertyController::class, 'index']);
-Route::get('properties/{property}', [PropertyController::class, 'show']);
+Route::post('properties/{property}/images/{imageId}', [PropertyController::class, 'deleteImage']); // Rota para deletar imagem específica
+Route::apiResource('properties', PropertyController::class);
+Route::get('/properties/slug/{slug}', [PropertyController::class, 'showBySlug']);
 
-// Rotas de Visitas Públicas (para agendamento de cliente)
-Route::post('visits', [VisitController::class, 'store']); // Cliente pode agendar visita sem login
+// Rotas de Visitas (CRUD completo, pode ser ajustado para roles específicas)
+Route::apiResource('visits', VisitController::class);
+// Rotas de Imóveis Públicas (sem autenticação)
 
 // Rota para lidar com OPTIONS (CORS)
 Route::options('{any}', function () {

@@ -5,18 +5,20 @@
       <div class="q-mb-md">
         <q-breadcrumbs>
           <q-breadcrumbs-el label="Admin" to="/admin" />
-          <q-breadcrumbs-el label="Visitas" to="/admin/leads" />
-          <q-breadcrumbs-el :label="visit.name" />
+          <!-- <q-breadcrumbs-el label="Visitas" to="/admin/leads" /> -->
+          <q-breadcrumbs-el label="Visitas" to="#" class="disabled" />
+          <q-breadcrumbs-el :label="visit.client_name" />
         </q-breadcrumbs>
       </div>
 
       <!-- Ações -->
       <div class="row items-center q-mb-md">
         <div class="col">
-          <div class="text-h4">{{ visit.name }}</div>
+          <div class="text-h4">{{ visit.client_name }}</div>
         </div>
         <div class="col-auto">
           <q-btn label="Voltar" color="grey-7" icon="arrow_back" to="/admin/leads" />
+          <!-- <q-btn label="Voltar" color="grey-7" icon="arrow_back" to="#" class="disabled" /> -->
         </div>
       </div>
 
@@ -29,20 +31,20 @@
 
               <div class="q-mb-md">
                 <div class="text-caption text-grey-7">Nome</div>
-                <div class="text-body1">{{ visit.name }}</div>
+                <div class="text-body1">{{ visit.client_name }}</div>
               </div>
 
               <div class="q-mb-md">
                 <div class="text-caption text-grey-7">E-mail</div>
                 <div class="text-body1">
-                  <a :href="`mailto:${visit.email}`">{{ visit.email }}</a>
+                  <a :href="`mailto:${visit.client_email}`">{{ visit.client_email }}</a>
                 </div>
               </div>
 
               <div class="q-mb-md">
                 <div class="text-caption text-grey-7">Telefone</div>
                 <div class="text-body1">
-                  <a :href="`tel:${visit.phone}`">{{ visit.phone }}</a>
+                  <a :href="`tel:${visit.client_phone}`">{{ visit.client_phone }}</a>
                 </div>
               </div>
 
@@ -60,15 +62,14 @@
           <q-card>
             <q-card-section>
               <div class="text-h6 q-mb-md">Agendamento</div>
-
               <div class="q-mb-md">
                 <div class="text-caption text-grey-7">Data</div>
-                <div class="text-body1">{{ formatDate(visit.date) }}</div>
+                <div class="text-body1">{{ formatDate(visit.preferred_date) }}</div>
               </div>
 
               <div class="q-mb-md">
                 <div class="text-caption text-grey-7">Horário</div>
-                <div class="text-body1">{{ visit.time }}</div>
+                <div class="text-body1">{{ visit.preferred_time }}</div>
               </div>
 
               <div class="q-mb-md">
@@ -103,6 +104,7 @@
                     ratio="1"
                     class="rounded-borders"
                   />
+                  <!-- Para usar q-img, você precisaria importar o componente e garantir que a URL da imagem esteja completa -->
                   <!-- <q-img
                     v-if="visit.property.images?.[0]"
                     :src="visit.property.images[0].url"
@@ -123,7 +125,7 @@
                     <div class="col-12 col-md-6">
                       <div class="text-caption text-grey-7">Preço</div>
                       <div class="text-h6 text-primary">
-                        R$ {{ formatPrice(visit.property.price) }}
+                        {{ formatPrice(visit.property.price) }}
                       </div>
                     </div>
 
@@ -168,6 +170,8 @@
             label="Status"
             outlined
             dense
+            emit-value
+            map-options
           />
         </q-card-section>
 
@@ -219,7 +223,7 @@ const loadVisit = async () => {
       message: error.message || 'Erro ao carregar visita',
     });
 
-    router.push('/admin/leads');
+    void router.push('/admin/leads');
   } finally {
     loading.value = false;
   }
@@ -232,7 +236,7 @@ const updateStatus = async () => {
 
   try {
     await visitService.update(visit.value.id, {
-      status: editingStatus.value as any,
+      status: editingStatus.value, // Agora editingStatus já é a string correta
     });
 
     $q.notify({
@@ -241,11 +245,11 @@ const updateStatus = async () => {
     });
 
     showEditDialog.value = false;
-    loadVisit();
+    await loadVisit(); // Recarrega a visita para refletir o novo status
   } catch (error: any) {
     $q.notify({
       type: 'negative',
-      message: error.message || 'Erro ao atualizar status',
+      message: error?.response?.data?.message || error?.message || 'Erro ao atualizar status',
     });
   } finally {
     submitting.value = false;
@@ -256,8 +260,16 @@ const formatDate = (date: string) => {
   return new Intl.DateTimeFormat('pt-BR').format(new Date(date));
 };
 
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('pt-BR').format(price);
+const formatPrice = (price: number | null | undefined): string => {
+  if (price === null || price === undefined) {
+    return 'R$ 0,00';
+  }
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(price);
 };
 
 const getTypeLabel = (type: string) => {

@@ -61,11 +61,11 @@
 
       <q-separator />
 
-      <q-card-section class="text-center text-caption text-grey-7">
+      <!-- <q-card-section class="text-center text-caption text-grey-7">
         <div>Credenciais padrão:</div>
         <div>Admin: admin@imobiliaria.com / admin123</div>
         <div>Usuário: usuario@imobiliaria.com / usuario123</div>
-      </q-card-section>
+      </q-card-section> -->
     </q-card>
 
     <!-- REMOVER q-inner-loading se não for necessário -->

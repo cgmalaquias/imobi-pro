@@ -29,6 +29,8 @@ return [
         'https://www.agenciareinodigital.com.br',
         'http://site.karinacarvalhoimoveis.com',
         'https://site.karinacarvalhoimoveis.com',
+        'http://karinacarvalhoimoveis.com',
+        'https://karinacarvalhoimoveis.com',
     ],
 
     'allowed_origins_patterns' => [],

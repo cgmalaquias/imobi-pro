@@ -202,8 +202,8 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import type {
   Property,
-  // PropertyType,
-  // TransactionType,
+  PropertyType,
+  TransactionType,
   PropertyFilters,
 } from 'src/services/property.service';
 import { propertyService } from 'src/services/property.service';

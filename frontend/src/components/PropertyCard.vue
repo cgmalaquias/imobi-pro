@@ -1,6 +1,6 @@
 <template>
   <q-card class="property-card" @click="$emit('click')">
-    <img :src="mainImage" ratio="16/9" />
+    <img :src="mainImage" ratio="16/9" class="img-card-property" />
 
     <!-- <q-img :src="mainImage" ratio="16/9">
       <template #error>
@@ -110,5 +110,11 @@ const formatPrice = (price: number | null | undefined): string => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.img-card-property {
+  height: 350px !important;
+  max-height: 350px !important;
+  min-height: 350px !important;
+  object-fit: cover;
 }
 </style>

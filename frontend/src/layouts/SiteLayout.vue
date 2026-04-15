@@ -56,7 +56,7 @@
         />
         <q-btn
           flat
-          label="Conheça um pouco sobre a empresa"
+          label="Sobre a empresa"
           @click="router.push({ name: 'site-about' })"
           class="q-mx-xs text-weight-medium header-link"
         />

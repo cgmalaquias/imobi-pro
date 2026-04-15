@@ -75,7 +75,7 @@
 
     <!-- Grid de imóveis -->
     <div v-if="!loading && properties.length > 0" class="row q-col-gutter-md">
-      <div v-for="property in properties" :key="property.id" class="col-12 col-sm-6 col-md-4">
+      <div v-for="property in properties" :key="property.id" class="col-12 col-sm-6 col-md-2">
         <q-card class="cursor-pointer property-card" @click="viewProperty(property)">
           <img :src="property.images?.[0]?.url || '/placeholder.jpg'" ratio="16/9" />
           <div class="absolute-top-right q-pa-sm">

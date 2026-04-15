@@ -96,7 +96,7 @@
               @click="updateFiltersAndLoad"
             />
           </div>
-          <div class="col-2 flex flex-center">
+          <div class="col-12 col-md-2 flex flex-center">
             <q-btn
               label="Limpar Filtros"
               color="grey"
@@ -261,7 +261,7 @@ const loadProperties = async () => {
     };
 
     // Atualiza a URL para refletir os filtros atuais
-    const newQuery: Record<string, string | number | undefined> = {};
+    const newQuery: Record<string, string | number | boolean | undefined> = {};
     for (const key in apiFilters) {
       const value = apiFilters[key as keyof PropertyFilters];
       if (value !== undefined && value !== null && value !== '' && value !== 'undefined') {
@@ -271,7 +271,7 @@ const loadProperties = async () => {
     }
     await router.replace({ query: newQuery });
 
-    console.log('Sending filters to API:', apiFilters); // Para depuração
+    // console.log('Sending filters to API:', apiFilters); // Para depuração
 
     const response = await propertyService.getAll(apiFilters);
 

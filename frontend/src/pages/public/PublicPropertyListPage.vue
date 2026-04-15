@@ -34,14 +34,14 @@
             />
           </div>
 
-          <div class="col-12 col-md-2">
+          <div class="col-12 col-md-4">
             <q-input
               v-model="filters.city"
               label="Cidade"
               outlined
               dense
               clearable
-              @update:model-value="updateFiltersAndLoad"
+              @keyup.enter="updateFiltersAndLoad"
             />
           </div>
 
@@ -54,7 +54,7 @@
               dense
               clearable
               prefix="R$"
-              @update:model-value="updateFiltersAndLoad"
+              @keyup.enter="updateFiltersAndLoad"
             />
           </div>
 
@@ -67,11 +67,11 @@
               dense
               clearable
               prefix="R$"
-              @update:model-value="updateFiltersAndLoad"
+              @keyup.enter="updateFiltersAndLoad"
             />
           </div>
 
-          <div class="col-10">
+          <div class="col-8">
             <q-input
               v-model="filters.search"
               label="Buscar por título, descrição ou endereço"
@@ -79,12 +79,32 @@
               dense
               clearable
               debounce="500"
-              @update:model-value="updateFiltersAndLoad"
+              @keyup.enter="updateFiltersAndLoad"
             >
               <template v-slot:prepend>
                 <q-icon name="search" />
               </template>
             </q-input>
+          </div>
+          <div class="col-12 col-md-2 flex flex-center">
+            <!-- ✅ Nova coluna para o botão Buscar -->
+            <q-btn
+              label="Buscar"
+              color="primary"
+              icon="search"
+              class="full-width"
+              @click="updateFiltersAndLoad"
+            />
+          </div>
+          <div class="col-2 flex flex-center">
+            <q-btn
+              label="Limpar Filtros"
+              color="grey"
+              icon="clear"
+              class="full-width"
+              flat
+              @click="clearFilters"
+            />
           </div>
         </div>
       </q-card-section>

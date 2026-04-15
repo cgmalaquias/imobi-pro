@@ -89,7 +89,7 @@
               />
             </div>
           </div>
-          <div class="text-right q-mt-xs">
+          <!-- <div class="text-right q-mt-xs">
             <q-btn
               flat
               dense
@@ -97,7 +97,7 @@
               color="primary"
               @click="goToPropertyList()"
             />
-          </div>
+          </div> -->
         </q-card>
       </div>
     </section>
@@ -413,7 +413,7 @@ onMounted(async () => {
   margin-top: -60px;
 }
 .home-filter__card {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+  box-shadow: 5px 6px 16px rgba(0, 0, 0, 0.16);
 }
 /* seções */
 .home-section {

@@ -6,30 +6,46 @@
     <q-card class="q-mb-md">
       <q-card-section>
         <div class="row q-col-gutter-md">
-          <div class="col-12 col-md-3">
+          <div class="col-12 col-md-2">
             <q-select
               v-model="filters.type"
-              :options="propertyTypes"
+              :options="propertyTypesOptions"
               label="Tipo"
               outlined
               dense
               clearable
-              @update:model-value="loadProperties"
+              emit-value
+              map-options
+              @update:model-value="updateFiltersAndLoad"
             />
           </div>
 
-          <div class="col-12 col-md-3">
+          <div class="col-12 col-md-2">
+            <q-select
+              v-model="filters.transactionType"
+              :options="transactionTypesOptions"
+              label="Venda / Aluguel"
+              outlined
+              dense
+              clearable
+              emit-value
+              map-options
+              @update:model-value="updateFiltersAndLoad"
+            />
+          </div>
+
+          <div class="col-12 col-md-2">
             <q-input
               v-model="filters.city"
               label="Cidade"
               outlined
               dense
               clearable
-              @update:model-value="loadProperties"
+              @update:model-value="updateFiltersAndLoad"
             />
           </div>
 
-          <div class="col-12 col-md-3">
+          <div class="col-12 col-md-2">
             <q-input
               v-model.number="filters.minPrice"
               label="Preço Mínimo"
@@ -38,11 +54,11 @@
               dense
               clearable
               prefix="R$"
-              @update:model-value="loadProperties"
+              @update:model-value="updateFiltersAndLoad"
             />
           </div>
 
-          <div class="col-12 col-md-3">
+          <div class="col-12 col-md-2">
             <q-input
               v-model.number="filters.maxPrice"
               label="Preço Máximo"
@@ -51,18 +67,19 @@
               dense
               clearable
               prefix="R$"
-              @update:model-value="loadProperties"
+              @update:model-value="updateFiltersAndLoad"
             />
           </div>
 
-          <div class="col-12">
+          <div class="col-10">
             <q-input
               v-model="filters.search"
               label="Buscar por título, descrição ou endereço"
               outlined
               dense
               clearable
-              @update:model-value="loadProperties"
+              debounce="500"
+              @update:model-value="updateFiltersAndLoad"
             >
               <template v-slot:prepend>
                 <q-icon name="search" />
@@ -91,89 +108,82 @@
               <q-icon name="place" size="xs" />
               {{ property.city }} - {{ property.state }}
             </div>
-            <div class="text-h5 text-primary q-mt-sm">
+            <div class="text-h6 text-weight-bold q-mt-sm">
               {{ formatPrice(property.price) }}
-            </div>
-          </q-card-section>
-
-          <q-card-section class="q-pt-none">
-            <div class="row q-gutter-xs">
-              <q-chip
-                v-if="property.bedrooms"
-                dense
-                icon="bed"
-                size="sm"
-                :label="`${property.bedrooms} quartos`"
-              />
-              <q-chip
-                v-if="property.bathrooms"
-                dense
-                icon="bathroom"
-                size="sm"
-                :label="`${property.bathrooms} banheiros`"
-              />
-              <q-chip
-                v-if="property.area"
-                dense
-                icon="straighten"
-                size="sm"
-                :label="`${property.area} m²`"
-              />
             </div>
           </q-card-section>
         </q-card>
       </div>
     </div>
 
-    <!-- Empty state -->
-    <div v-if="!loading && properties.length === 0" class="text-center q-pa-xl">
-      <q-icon name="home_work" size="80px" color="grey-5" />
-      <div class="text-h6 text-grey-7 q-mt-md">Nenhum imóvel encontrado</div>
-      <div class="text-body2 text-grey-6">Tente ajustar os filtros de busca</div>
+    <div v-else-if="!loading && properties.length === 0" class="text-center q-py-xl">
+      <div class="text-h6">Nenhum imóvel encontrado com os filtros aplicados.</div>
+      <q-btn label="Limpar Filtros" color="primary" @click="clearFilters" class="q-mt-md" />
+    </div>
+
+    <div v-if="loading" class="text-center q-py-xl">
+      <q-spinner-dots color="primary" size="3em" />
+      <div class="text-h6 q-mt-md">Carregando imóveis...</div>
     </div>
 
     <!-- Paginação -->
-    <div class="flex flex-center q-mt-md" v-if="pagination.last_page > 1">
+    <div v-if="pagination.total > 0" class="q-pa-lg flex flex-center">
       <q-pagination
         v-model="pagination.current_page"
         :max="pagination.last_page"
+        :max-pages="5"
         direction-links
         boundary-links
-        @update:model-value="loadProperties"
+        icon-first="skip_previous"
+        icon-last="skip_next"
+        icon-prev="fast_rewind"
+        icon-next="fast_forward"
+        @update:model-value="updateFiltersAndLoad"
       />
     </div>
-
-    <!-- Loading -->
-    <q-inner-loading :showing="loading">
-      <q-spinner-gears size="50px" color="primary" />
-    </q-inner-loading>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import type { Property, PropertyFilters } from 'src/services/property.service';
-import { propertyService } from 'src/services/property.service';
+import { ref, onMounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import type {
+  Property,
+  PropertyFilters,
+  PropertyType,
+  TransactionType,
+} from 'src/services/property.service';
+import { propertyService } from 'src/services/property.service'; // Importe PropertyType e TransactionType
 
+const route = useRoute();
 const router = useRouter();
 
-// Variável de ambiente para a URL base das imagens (compatível com Vite)
-const imageBaseUrl = import.meta.env.VITE_APP_IMAGE_URL || '';
+const imageBaseUrl =
+  import.meta.env.VITE_APP_IMAGE_URL || 'https://imobiproapi.agenciareinodigital.com.br/storage/';
 
 const properties = ref<Property[]>([]);
 const loading = ref(false);
-const filters = ref<PropertyFilters>({
-  status: 'DISPONIVEL', // Apenas imóveis disponíveis no site público
-});
 const pagination = ref({
   current_page: 1,
   last_page: 1,
-  per_page: 12,
+  per_page: 8,
   total: 0,
 });
 
-const propertyTypes = [
+const filters = ref<PropertyFilters>({
+  page: 1,
+  limit: 12,
+  type: undefined,
+  city: undefined,
+  status: 'DISPONIVEL', // Sempre buscar disponíveis
+  transactionType: undefined,
+  search: undefined,
+  minPrice: undefined,
+  maxPrice: undefined,
+});
+
+const propertyTypesOptions = [
+  { label: 'Todos os Tipos', value: undefined }, // Opção para limpar o filtro
   { label: 'Casa', value: 'CASA' },
   { label: 'Apartamento', value: 'APARTAMENTO' },
   { label: 'Comercial', value: 'COMERCIAL' },
@@ -181,21 +191,75 @@ const propertyTypes = [
   { label: 'Fazenda', value: 'FAZENDA' },
 ];
 
+const transactionTypesOptions = [
+  { label: 'Ambos', value: undefined }, // Opção para limpar o filtro (mostrar Venda e Aluguel)
+  { label: 'Venda', value: 'VENDA' },
+  { label: 'Aluguel', value: 'ALUGUEL' },
+  { label: 'Troca', value: 'TROCA' },
+  { label: 'A Combinar', value: 'A COMBINAR' },
+];
+
+// Função para aplicar filtros da URL ao estado local
+const applyFiltersFromUrl = () => {
+  // Resetar filtros para evitar que valores antigos persistam
+  filters.value = {
+    page: 1,
+    limit: 8,
+    status: 'DISPONIVEL',
+    type: undefined,
+    city: undefined,
+    transactionType: undefined,
+    search: undefined,
+    minPrice: undefined,
+    maxPrice: undefined,
+  };
+
+  // Aplicar filtros da URL
+  if (route.query.page) filters.value.page = Number(route.query.page);
+  if (route.query.limit) filters.value.limit = Number(route.query.limit);
+  if (route.query.type) filters.value.type = route.query.type as PropertyType;
+  if (route.query.city) filters.value.city = route.query.city as string;
+  if (route.query.transactionType)
+    filters.value.transactionType = route.query.transactionType as TransactionType;
+  if (route.query.search) filters.value.search = route.query.search as string;
+  if (route.query.minPrice) filters.value.minPrice = Number(route.query.minPrice);
+  if (route.query.maxPrice) filters.value.maxPrice = Number(route.query.maxPrice);
+
+  // Forçar a paginação a refletir a página da URL
+  pagination.value.current_page = filters.value.page || 1;
+
+  void loadProperties();
+};
+
+// Função para carregar imóveis com base nos filtros atuais
 const loadProperties = async () => {
   loading.value = true;
-
   try {
-    const response = await propertyService.getAll({
+    const apiFilters: PropertyFilters = {
       ...filters.value,
-      page: pagination.value.current_page,
-    });
+      page: pagination.value.current_page, // Usa a página da paginação
+    };
 
-    // Mapeia as imagens para adicionar a URL base
+    // Atualiza a URL para refletir os filtros atuais
+    const newQuery: Record<string, string | number | undefined> = {};
+    for (const key in apiFilters) {
+      const value = apiFilters[key as keyof PropertyFilters];
+      if (value !== undefined && value !== null && value !== '' && value !== 'undefined') {
+        // Evita adicionar undefined/null/vazio na URL
+        newQuery[key] = value;
+      }
+    }
+    await router.replace({ query: newQuery });
+
+    console.log('Sending filters to API:', apiFilters); // Para depuração
+
+    const response = await propertyService.getAll(apiFilters);
+
     properties.value = response.data.map((property: Property) => ({
       ...property,
       images: (property.images || []).map((img: any) => ({
         ...img,
-        url: `${imageBaseUrl}${img.path || img.url}`, // Usa 'path' ou 'url' do backend
+        url: `${imageBaseUrl}${img.path || img.url}`,
       })),
     }));
 
@@ -207,9 +271,35 @@ const loadProperties = async () => {
     };
   } catch (error) {
     console.error('Erro ao carregar imóveis:', error);
+    properties.value = []; // Limpa a lista em caso de erro
+    pagination.value = { current_page: 1, last_page: 1, per_page: 8, total: 0 }; // Reseta paginação
   } finally {
     loading.value = false;
   }
+};
+
+// Função unificada para atualizar filtros e recarregar imóveis
+const updateFiltersAndLoad = () => {
+  filters.value.page = 1; // Sempre volta para a primeira página ao mudar um filtro
+  pagination.value.current_page = 1; // Garante que a paginação também resete
+  void loadProperties();
+};
+
+// Função para limpar todos os filtros
+const clearFilters = () => {
+  filters.value = {
+    page: 1,
+    limit: 8,
+    status: 'DISPONIVEL',
+    type: undefined,
+    city: undefined,
+    transactionType: undefined,
+    search: undefined,
+    minPrice: undefined,
+    maxPrice: undefined,
+  };
+  pagination.value.current_page = 1;
+  void loadProperties();
 };
 
 const viewProperty = (property: Property) => {
@@ -249,8 +339,32 @@ const getStatusLabel = (status: string) => {
   return labels[status] || status;
 };
 
-onMounted(async () => {
-  await loadProperties();
+// Observa mudanças na rota (URL) e nos filtros
+watch(
+  () => route.query,
+  () => {
+    // Apenas aplica os filtros da URL se houver uma mudança real
+    // Isso evita loops infinitos se loadProperties já atualizou a URL
+    const currentQuery = JSON.stringify(route.query);
+    const filtersAsQuery = JSON.stringify(
+      Object.fromEntries(
+        Object.entries(filters.value).filter(
+          ([, value]) =>
+            value !== undefined && value !== null && value !== '' && value !== 'undefined',
+        ),
+      ),
+    );
+
+    if (currentQuery !== filtersAsQuery) {
+      applyFiltersFromUrl();
+    }
+  },
+  { deep: true, immediate: true }, // 'immediate: true' para executar na montagem
+);
+
+// onMounted agora apenas inicia o watcher, que chamará applyFiltersFromUrl
+onMounted(() => {
+  // O watcher com immediate: true já cuidará da carga inicial
 });
 </script>
 
@@ -259,9 +373,10 @@ onMounted(async () => {
   transition: transform 0.2s;
 }
 .q-card img {
-  height: 250px !important;
+  height: 200px !important;
+  object-fit: cover;
 }
-.property-card .property-card:hover {
+.property-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
@@ -272,5 +387,6 @@ onMounted(async () => {
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  height: 3em !important;
 }
 </style>

@@ -46,25 +46,28 @@ return new class extends Migration
                 ->update(['slug' => $slug]);
         }
 
-        // 3. Adiciona índice único — compatível com Laravel 10+ e PostgreSQL
-        Schema::table('properties', function (Blueprint $table) {
-            // Verifica via query no information_schema (funciona em PostgreSQL e MySQL)
-            $indexExists = DB::select("
-                SELECT indexname
-                FROM pg_indexes
-                WHERE tablename = 'properties'
-                AND indexname = 'properties_slug_unique'
-            ");
+        // 3. Adiciona índice único
+        // ✅ Substituída a query pg_indexes (exclusiva do PostgreSQL)
+        // por INFORMATION_SCHEMA que é compatível com MySQL/MariaDB
+        $indexExists = DB::select("
+            SELECT INDEX_NAME
+            FROM INFORMATION_SCHEMA.STATISTICS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME   = 'properties'
+              AND INDEX_NAME   = 'properties_slug_unique'
+        ");
 
-            if (empty($indexExists)) {
+        if (empty($indexExists)) {
+            Schema::table('properties', function (Blueprint $table) {
                 $table->unique('slug', 'properties_slug_unique');
-            }
-        });
+            });
+        }
     }
 
     public function down(): void
     {
         Schema::table('properties', function (Blueprint $table) {
+            // ✅ No MySQL/MariaDB dropUnique recebe o nome do índice como string direta
             $table->dropUnique('properties_slug_unique');
             $table->dropColumn('slug');
         });

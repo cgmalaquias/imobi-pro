@@ -11,19 +11,19 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         User::create([
-            'name' => 'Administrador',
-            'email' => 'admin@imobiliaria.com',
-            'password' => Hash::make('admin123'),
+            'name' => 'Karina Carvalho',
+            'email' => 'karinacarvalhocorretora@gmail.com',
+            'password' => Hash::make('karina@2022*'),
             'role' => 'ADMIN',
             'active' => true,
         ]);
 
-        User::create([
-            'name' => 'Usuário Teste',
-            'email' => 'usuario@imobiliaria.com',
-            'password' => Hash::make('usuario123'),
-            'role' => 'USUARIO',
-            'active' => true,
-        ]);
+        // User::create([
+        //     'name' => 'Usuário Teste',
+        //     'email' => 'usuario@imobiliaria.com',
+        //     'password' => Hash::make('usuario123'),
+        //     'role' => 'USUARIO',
+        //     'active' => true,
+        // ]);
     }
 }

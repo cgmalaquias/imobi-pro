@@ -6,26 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::table('properties', function (Blueprint $table) {
-            // Adiciona a coluna 'featured' como booleano, com valor padrão false
-            $table->boolean('featured')->default(false)->after('transaction_type');
-            // Você pode ajustar 'after' para posicionar a coluna onde preferir
-        });
+        if (!Schema::hasColumn('properties', 'featured')) {
+            Schema::table('properties', function (Blueprint $table) {
+                // ✅ boolean() no MySQL/MariaDB é implementado como TINYINT(1)
+                // default(false) vira default(0) — funciona perfeitamente
+                // ->after() é nativo do MySQL, sem nenhum problema
+                $table->boolean('featured')->default(false)->after('transaction_type');
+            });
+        }
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('properties', function (Blueprint $table) {
-            // Remove a coluna 'featured' se a migration for revertida
-            $table->dropColumn('featured');
-        });
+        if (Schema::hasColumn('properties', 'featured')) {
+            Schema::table('properties', function (Blueprint $table) {
+                $table->dropColumn('featured');
+            });
+        }
     }
 };

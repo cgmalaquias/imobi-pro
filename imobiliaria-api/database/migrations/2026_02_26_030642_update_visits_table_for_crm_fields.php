@@ -9,8 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('visits', function (Blueprint $table) {
+
             // 1. Renomear colunas existentes
-            // Verifique se as colunas existem antes de tentar renomear
+            // ✅ renameColumn funciona no MariaDB a partir da versão 10.5+
+            // Se sua versão for anterior, comente os renames e faça manualmente
             if (Schema::hasColumn('visits', 'name')) {
                 $table->renameColumn('name', 'client_name');
             }
@@ -27,26 +29,28 @@ return new class extends Migration
                 $table->renameColumn('time', 'preferred_time');
             }
 
-            // 2. Adicionar novas colunas
-            // Adiciona user_id (corretor responsável)
+            // 2. Adicionar user_id (corretor responsável)
             if (!Schema::hasColumn('visits', 'user_id')) {
-                $table->foreignUuid('user_id')->nullable()->constrained('users')->onDelete('set null')->after('message');
+                // ✅ No MariaDB, foreignUuid()->constrained() pode ser instável
+                // então usamos uuid + foreign explícito igual às outras migrations
+                $table->uuid('user_id')->nullable()->after('message');
+                $table->foreign('user_id')
+                    ->references('id')
+                    ->on('users')
+                    ->onDelete('set null');
             }
-            // Adiciona internal_notes (anotações internas)
+
+            // 3. Adicionar internal_notes (anotações internas do corretor)
             if (!Schema::hasColumn('visits', 'internal_notes')) {
                 $table->text('internal_notes')->nullable()->after('user_id');
             }
-
-            // 3. Ajustar o status para ser consistente (se necessário)
-            // Se você já tem um default 'PENDENTE', não precisa mudar.
-            // Se o status for diferente, pode ser necessário um update manual ou um default aqui.
-            // $table->string('status')->default('PENDENTE')->change(); // Use ->change() com cuidado
         });
     }
 
     public function down(): void
     {
         Schema::table('visits', function (Blueprint $table) {
+
             // Reverter renomeações
             if (Schema::hasColumn('visits', 'client_name')) {
                 $table->renameColumn('client_name', 'name');
@@ -64,12 +68,16 @@ return new class extends Migration
                 $table->renameColumn('preferred_time', 'time');
             }
 
-            // Remover colunas adicionadas
+            // Remover internal_notes
             if (Schema::hasColumn('visits', 'internal_notes')) {
                 $table->dropColumn('internal_notes');
             }
+
+            // ✅ No MariaDB, dropConstrainedForeignId() pode falhar para uuid
+            // então removemos a foreign key pelo nome e depois a coluna
             if (Schema::hasColumn('visits', 'user_id')) {
-                $table->dropConstrainedForeignId('user_id'); // Remove a foreign key e a coluna
+                $table->dropForeign(['user_id']);
+                $table->dropColumn('user_id');
             }
         });
     }

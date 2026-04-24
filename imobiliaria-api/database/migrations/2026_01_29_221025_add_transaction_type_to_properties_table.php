@@ -6,23 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::table('properties', function (Blueprint $table) {
-            $table->string('transaction_type', 10)->default('VENDA')->after('status');
-        });
+        // ✅ Só adiciona a coluna se ela ainda não existir
+        if (!Schema::hasColumn('properties', 'transaction_type')) {
+            Schema::table('properties', function (Blueprint $table) {
+                $table->enum('transaction_type', ['VENDA', 'ALUGUEL', 'AMBOS'])
+                    ->default('VENDA')
+                    ->after('status');
+            });
+        }
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('properties', function (Blueprint $table) {
-            $table->dropColumn('transaction_type');
-        });
+        if (Schema::hasColumn('properties', 'transaction_type')) {
+            Schema::table('properties', function (Blueprint $table) {
+                $table->dropColumn('transaction_type');
+            });
+        }
     }
 };

@@ -10,15 +10,31 @@ return new class extends Migration
     {
         Schema::create('visits', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('property_id')->constrained()->onDelete('cascade');
+
+            // ✅ Foreign explícito para MariaDB
+            $table->uuid('property_id');
+            $table->foreign('property_id')
+                ->references('id')
+                ->on('properties')
+                ->onDelete('cascade');
+
+            // Dados do visitante
             $table->string('name');
             $table->string('email');
-            $table->string('phone');
+            $table->string('phone', 20);       // ✅ limitado ao tamanho de telefone
+
+            // Data e hora da visita
             $table->date('date');
-            $table->string('time');
+            $table->time('time');              // ✅ trocado de string para time nativo do MySQL
+
             $table->text('message')->nullable();
-            // Status em português
-            $table->string('status')->default('PENDENTE'); // PENDENTE, CONFIRMADO, CONCLUIDO, CANCELADO
+
+            // ✅ enum garante integridade dos status no MySQL
+            $table->enum('status', ['PENDENTE', 'CONFIRMADO', 'CONCLUIDO', 'CANCELADO'])
+                ->default('PENDENTE');
+
+            $table->string('notes')->nullable(); // ✅ observações internas do corretor
+
             $table->timestamps();
         });
     }

@@ -8,16 +8,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('properties', function (Blueprint $table) {
-            // Adiciona após o campo 'address'
-            $table->string('neighborhood')->nullable()->after('address');
-        });
+        // ✅ Só adiciona se ainda não existir
+        if (!Schema::hasColumn('properties', 'neighborhood')) {
+            Schema::table('properties', function (Blueprint $table) {
+                $table->string('neighborhood')->nullable()->after('address');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('properties', function (Blueprint $table) {
-            $table->dropColumn('neighborhood');
-        });
+        if (Schema::hasColumn('properties', 'neighborhood')) {
+            Schema::table('properties', function (Blueprint $table) {
+                $table->dropColumn('neighborhood');
+            });
+        }
     }
 };

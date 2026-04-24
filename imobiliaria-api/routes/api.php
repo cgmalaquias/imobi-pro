@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PropertyController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VisitController; // Certifique-se de importar o VisitController
+use App\Http\Controllers\PropertyImageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,8 +33,13 @@ Route::middleware('auth:jwt')->group(function () {
 });
 
 Route::post('properties/{property}/images/{imageId}', [PropertyController::class, 'deleteImage']); // Rota para deletar imagem específica
+Route::post('property-images/reorder',      [PropertyImageController::class, 'reorder']);
+Route::patch('property-images/{id}/cover',  [PropertyImageController::class, 'setCover']);
+Route::delete('property-images/{id}',       [PropertyImageController::class, 'destroy']);
+
 Route::apiResource('properties', PropertyController::class);
 Route::get('/properties/slug/{slug}', [PropertyController::class, 'showBySlug']);
+
 
 // Rotas de Visitas (CRUD completo, pode ser ajustado para roles específicas)
 Route::apiResource('visits', VisitController::class);

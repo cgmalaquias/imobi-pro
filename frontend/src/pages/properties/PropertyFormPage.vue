@@ -447,13 +447,13 @@ const priceLabel = computed(() => {
 });
 
 const onCepBlur = async () => {
-  const raw = form.value.zip_code?.replace(/\D/g, '');
-  if (!raw || raw.length !== 8) {
+  const cep_input = form.value.zip_code?.replace(/\D/g, '');
+  if (!cep_input || cep_input.length !== 8) {
     return;
   }
   loadingCep.value = true;
   try {
-    const response = await fetch(`https://viacep.com.br/ws/${raw}/json/`);
+    const response = await fetch(`https://brasilapi.com.br/api/cep/v2/${cep_input}`);
     const data = await response.json();
 
     if (data.erro) {
@@ -471,16 +471,18 @@ const onCepBlur = async () => {
       return;
     }
 
-    form.value.address = data.logradouro || '';
-    form.value.neighborhood = data.bairro || '';
-    form.value.city = data.localidade || '';
-    form.value.state = data.uf || '';
+    form.value.address = data.street || '';
+    form.value.neighborhood = data.neighborhood || '';
+    form.value.city = data.city || '';
+    form.value.state = data.state || '';
+    form.value.latitude = data.location.coordinates.latitude || null;
+    form.value.longitude = data.location.coordinates.longitude || null;
 
     await fetchLatLongFromAddress();
-  } catch (error) {
+  } catch (error: unknown) {
     $q.notify({
       type: 'negative',
-      message: `Erro ao buscar CEP: ${error} `,
+      message: `Erro ao buscar CEP: ${String(error)}`,
     });
   } finally {
     loadingCep.value = false;
@@ -587,7 +589,9 @@ const removeExistingImage = (index: number) => {
 const onFileRejected = (rejectedEntries: any[]) => {
   $q.notify({
     type: 'negative',
-    message: 'Arquivo muito grande (máximo 5MB) ou tipo inválido.',
+    message:
+      'Arquivo muito grande (máximo 5MB) ou tipo inválido.' +
+      rejectedEntries.map((entry) => entry.file.name).join(', '),
   });
 };
 

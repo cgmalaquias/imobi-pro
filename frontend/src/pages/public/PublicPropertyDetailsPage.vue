@@ -284,6 +284,8 @@ const submitting = ref(false);
 const currentImage = ref(0);
 const showVisitDialog = ref(false);
 
+const imageBaseUrl = 'https://imobiproapi.agenciareinodigital.com.br/api';
+
 // NOVO: Variáveis para o diálogo de imagem
 const showImageDialog = ref(false);
 const dialogImageIndex = ref(0);
@@ -313,7 +315,7 @@ const loadProperty = async () => {
     // Garante que as imagens tenham URL completa
     fetchedProperty.images = (fetchedProperty.images || []).map((img: any) => ({
       ...img,
-      url: `${import.meta.env.VITE_APP_IMAGE_URL}${img.path || img.url}`,
+      url: `${imageBaseUrl}${img.path || img.url}`,
     }));
 
     property.value = fetchedProperty;

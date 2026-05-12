@@ -55,7 +55,7 @@ interface Props {
 const props = defineProps<Props>();
 
 // Base URL para imagens, obtida das variáveis de ambiente do Vite
-const imageBaseUrl = import.meta.env.VITE_APP_IMAGE_URL || '';
+const imageBaseUrl = 'https://imobiproapi.agenciareinodigital.com.br/api';
 
 const mainImage = computed<string>(() => {
   if (props.property.images && props.property.images.length > 0) {

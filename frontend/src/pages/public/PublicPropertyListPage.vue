@@ -178,8 +178,7 @@ import { propertyService } from 'src/services/property.service'; // Importe Prop
 const route = useRoute();
 const router = useRouter();
 
-const imageBaseUrl =
-  import.meta.env.VITE_APP_IMAGE_URL || 'https://imobiproapi.agenciareinodigital.com.br/storage/';
+const imageBaseUrl = 'https://imobiproapi.agenciareinodigital.com.br/api';
 
 const properties = ref<Property[]>([]);
 const loading = ref(false);

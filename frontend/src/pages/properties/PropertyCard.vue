@@ -124,7 +124,7 @@ const coverImage = computed(() => {
   return cover?.url || props.property.images?.[0]?.url || '/placeholder-property.jpg';
 });
 
-const imageBaseUrl = import.meta.env.VITE_APP_IMAGE_URL || '';
+const imageBaseUrl = 'https://imobiproapi.agenciareinodigital.com.br/api';
 
 const getStatusColor = (status: PropertyStatus): string => {
   const colors: Record<PropertyStatus, string> = {

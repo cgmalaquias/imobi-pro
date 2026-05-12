@@ -212,7 +212,7 @@ import PropertyCard from 'src/components/PropertyCard.vue';
 const router = useRouter();
 
 // Variável de ambiente para a URL base das imagens
-const imageBaseUrl = import.meta.env.VITE_APP_IMAGE_URL;
+const imageBaseUrl = 'https://imobiproapi.agenciareinodigital.com.br/api';
 
 // Definindo os filtros para a busca principal
 const filters = ref<PropertyFilters & { transactionType?: TransactionType; search?: string }>({

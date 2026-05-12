@@ -165,7 +165,7 @@ import { useQuasar } from 'quasar';
 import type { Property, PropertyFilters } from 'src/services/property.service';
 import { propertyService } from 'src/services/property.service';
 
-const imageBaseUrl = import.meta.env.VITE_APP_IMAGE_URL || '';
+const imageBaseUrl = 'https://imobiproapi.agenciareinodigital.com.br/api';
 const router = useRouter();
 const $q = useQuasar();
 
